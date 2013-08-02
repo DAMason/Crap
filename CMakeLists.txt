@@ -76,6 +76,10 @@ if (CMAKE_SYSTEM_NAME MATCHES Darwin)
 
 endif (CMAKE_SYSTEM_NAME MATCHES Darwin) 
 
+##########################################################
+# CrapPhoAnalysis 
+##########################################################
+
 # List of source files
 set(CrapPhoAnalysis_SRCS
 ${SUSYNTUPLE_SRC}/SusyEvent.cc
@@ -118,6 +122,47 @@ set_target_properties(CrapPhoAnalysis PROPERTIES ${CrapPhoAnalysis_LIBRARY_PROPE
 
 ############### install the library ###################
 install(TARGETS CrapPhoAnalysis DESTINATION ${CMAKE_BINARY_DIR}/lib)
+
+
+
+
+##########################################################
+# CrapLLAnalysis 
+##########################################################
+
+
+
+# List of source files
+set(CrapLLAnalysis_SRCS
+${SUSYNTUPLE_SRC}/SusyEvent.cc
+LLAnalysis/CrapLLAnalysis.cc
+)
+
+
+# fill list of header files
+set(CrapLLAnalysis_HEADERS
+SusyEvent.h
+LLAnalysis/CrapLLAnalysis.h
+)
+
+# Set the library version in the main CMakeLists.txt
+SET(CrapLLAnalysis_MAJOR_VERSION 0)
+SET(CrapLLAnalysis_MINOR_VERSION 0)
+SET(CrapLLAnalysis_PATCH_VERSION 0)
+SET(CrapLLAnalysis_VERSION "${CrapLLAnalysis_MAJOR_VERSION}.${CrapLLAnalysis_MINOR_VERSION}.${CrapLLAnalysis_PATCH_VERSION}")
+SET(CrapLLAnalysis_LIBRARY_PROPERTIES ${CrapLLAnalysis_LIBRARY_PROPERTIES}
+    VERSION "${CrapLLAnalysis_VERSION}"
+    SOVERSION "${CrapLLAnalysis_MAJOR_VERSION}"
+    SUFFIX ".so"
+)
+
+############### build the library #####################
+add_library(CrapLLAnalysis SHARED ${CrapLLAnalysis_SRCS})
+target_link_libraries(CrapLLAnalysis ${ROOT_LIBRARIES})
+set_target_properties(CrapLLAnalysis PROPERTIES ${CrapLLAnalysis_LIBRARY_PROPERTIES})
+
+############### install the library ###################
+install(TARGETS CrapLLAnalysis DESTINATION ${CMAKE_BINARY_DIR}/lib)
 
 
 
