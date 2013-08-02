@@ -90,7 +90,7 @@ PhoAnalysis/CrapPhoAnalysis.cc
 # fill list of header files 
 set(CrapPhoAnalysis_HEADERS
 SusyEvent.h 
-PhoAnalysis/CrapPhoAnalysis.h
+Crap.h
 )
 
 # set everything needed for the root dictonary and create the
