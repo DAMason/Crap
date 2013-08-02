@@ -11,7 +11,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6.0 FATAL_ERROR)
 
 # Set name of our project to "CrapPhoAnalysis". Has to be done
 # after check of cmake version since this is a new feature                  
-project(CrapPhoAnalysis)
+project(Crap)
 
 # Load some basic macros which are needed later on
 include(FindROOT.cmake)
@@ -79,14 +79,14 @@ endif (CMAKE_SYSTEM_NAME MATCHES Darwin)
 # List of source files
 set(CrapPhoAnalysis_SRCS
 ${SUSYNTUPLE_SRC}/SusyEvent.cc
-CrapPhoAnalysis.cc
+PhoAnalysis/CrapPhoAnalysis.cc
 )
 
 
 # fill list of header files 
 set(CrapPhoAnalysis_HEADERS
 SusyEvent.h 
-CrapPhoAnalysis.h
+PhoAnalysis/CrapPhoAnalysis.h
 )
 
 # set everything needed for the root dictonary and create the
