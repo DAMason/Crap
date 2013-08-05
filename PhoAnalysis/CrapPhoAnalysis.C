@@ -6,23 +6,26 @@ void CrapPhoAnalysis(TString outputName="analysis"){
   // REMOVE THE LINE BELOW IF NOT RUNNING IN CMSSW ENVIRONMENT
   //gSystem->Load("libCondFormatsJetMETObjects.so");
 
-  gSystem->Load("../../SUSYPhotonAnalysis/SusyNtuplizer/macro/libSusyEvent.so");
+  //gSystem->Load("../../SUSYPhotonAnalysis/SusyNtuplizer/macro/libSusyEvent.so");
 
   //gSystem->AddIncludePath("-I" + TString(gSystem->Getenv("CMSSW_RELEASE_BASE")) + "/src");
 
   // Analysis macro
   //gROOT->LoadMacro("SusyEventAnalyzer.cc+");
 
-  gSystem->AddIncludePath("-I /Users/dmason/play/photons/SUSYPhotonAnalysis/SusyNtuplizer/src");
-  gSystem->AddIncludePath("-I /Users/dmason/play/photons/Crap");
+  //gSystem->AddIncludePath("-I /Users/dmason/play/photons/SUSYPhotonAnalysis/SusyNtuplizer/src");
+  //gSystem->AddIncludePath("-I /Users/dmason/play/photons/Crap");
 
   //gSystem->Load("/Users/dmason/play/photons/SUSYPhotonAnalysis/SusyNtuplizer/src/SusyEvent.h+");
-  //gROOT->ProcessLine(".L ../SusyEvent.h+");
-  //gROOT->ProcessLine(".L ../Crap.h+");
-
-  //gSystem->Load("../lib/libCrapPhoAnalysis.so");
+  gROOT->ProcessLine(".L ../SusyEvent.h+");
+  gROOT->ProcessLine(".L ../Crap.h+");
   
-  gROOT->LoadMacro("CrapPhoAnalysis.cc++");
+  gROOT->ProcessLine(".L CrapPhoAnalysis.h+");
+
+
+  gSystem->Load("../lib/libCrapPhoAnalysis.so");
+  
+  //gROOT->LoadMacro("CrapPhoAnalysis.cc++");
 
   // chain of inputs
   TChain chain("susyTree");

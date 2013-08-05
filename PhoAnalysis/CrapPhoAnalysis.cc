@@ -20,6 +20,7 @@
 
 #include <TH1F.h>
 #include <TFile.h>
+#include <TTree.h>
 
 #include <cmath>
 #include <algorithm>
@@ -47,13 +48,7 @@
 #include "../Crap.h"
 #include "../UtilPieces.h"
 
-// Inherit from Crap
-class CrapPhoAnalysis: public Crap {
-  public:
-  CrapPhoAnalysis(TTree& tree):Crap(tree) {}
-  /* Main analyzer function to be defined */
-  virtual void Run();
-};
+#include "CrapPhoAnalysis.h"
 
 
 ////////// MAIN ANALYSIS FUNCTION //////////
