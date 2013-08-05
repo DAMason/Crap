@@ -231,7 +231,8 @@ CrapLLAnalysis::Run()
 
         if(photon.photonIso - event.rho25 * effA[2] - 0.005 * pt > 1.3) continue;
 
-        double chIso(photon.chargedHadronIso - event.rho25 * effA[0]);
+        //double chIso(photon.chargedHadronIso - event.rho25 * effA[0]);
+        double chIso=rhoCorrectedChIso(photon.chargedHadronIso,photon.momentum.Eta(),event.rho25);
 
         if(photon.sigmaIetaIeta < 0.012 && chIso < 2.6) goodPhotons.push_back(&photon);
         else if(photon.sigmaIetaIeta < 0.014 && chIso < 15.) fakePhotons.push_back(&photon);

@@ -27,11 +27,13 @@
 #include <set>
 #include <fstream>
 
-#include <SusyEvent.h>
+#include "SusyEvent.h"
 
 class Crap {
 public:
   Crap(TTree&);
+  //Crap(TChain&);
+
   virtual ~Crap();
 
   /* Main analyzer function to be defined */
@@ -76,6 +78,7 @@ protected:
 };
 
 Crap::Crap(TTree& tree) :
+//Crap::Crap(TChain& tree):
   event(),
   fTree(&tree),
   outputName("analysis"),

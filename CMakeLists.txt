@@ -32,7 +32,7 @@ set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}/bin")
 
 set(INCLUDE_DIRECTORIES
 ${ROOT_INCLUDE_DIR}
-${SUSYNTUPLE_SRC}
+# ${SUSYNTUPLE_SRC}
 )
 
 include_directories( ${INCLUDE_DIRECTORIES})
@@ -90,17 +90,18 @@ PhoAnalysis/CrapPhoAnalysis.cc
 # fill list of header files 
 set(CrapPhoAnalysis_HEADERS
 SusyEvent.h 
-Crap.h
 )
 
 # set everything needed for the root dictonary and create the
 # dictionary
-#set(CrapPhoAnalysis_LINKDEF CrapPhoAnalysisLinkDef.h )
-#set(CrapPhoAnalysis_DICTIONARY ${CMAKE_CURRENT_BINARY_DIR}/CrapPhoAnalysisDict.cxx) 
-#ROOT_GENERATE_DICTIONARY("${CrapPhoAnalysis_HEADERS}" "${CrapPhoAnalysis_LINKDEF}" "${CrapPhoAnalysis_DICTIONARY}" "${INCLUDE_DIRECTORIES}")
+#set(CrapPhoAnalysis_LINKDEF PhoAnalysis/CrapPhoAnalysisLinkDef.h )
+set(CrapPhoAnalysis_LINKDEF ${SUSYNTUPLE_SRC}/SusyNtuplizer_LinkDef.h )
+
+set(CrapPhoAnalysis_DICTIONARY ${CMAKE_CURRENT_BINARY_DIR}/CrapPhoAnalysisDict.cxx) 
+ROOT_GENERATE_DICTIONARY("${CrapPhoAnalysis_HEADERS}" "${CrapPhoAnalysis_LINKDEF}" "${CrapPhoAnalysis_DICTIONARY}" "${INCLUDE_DIRECTORIES}")
 
 # add the dictionary to the list of source files
-#SET(CrapPhoAnalysis_SRCS ${CrapPhoAnalysis_SRCS} ${CrapPhoAnalysis_DICTIONARY}) 
+SET(CrapPhoAnalysis_SRCS ${CrapPhoAnalysis_SRCS} ${CrapPhoAnalysis_DICTIONARY}) 
 
 
 # Set the library version in the main CMakeLists.txt
@@ -123,6 +124,11 @@ set_target_properties(CrapPhoAnalysis PROPERTIES ${CrapPhoAnalysis_LIBRARY_PROPE
 ############### install the library ###################
 install(TARGETS CrapPhoAnalysis DESTINATION ${CMAKE_BINARY_DIR}/lib)
 
+
+############### build the executable ######################
+add_executable(CrapPhoAnalysisExe PhoAnalysis/CrapPhoMain.cc)
+target_link_libraries(CrapPhoAnalysisExe ${ROOT_LIBRARIES} CrapPhoAnalysis)
+#set_target_properties(CrapPhoAnalysisExe)
 
 
 

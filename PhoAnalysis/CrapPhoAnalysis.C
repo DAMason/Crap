@@ -6,17 +6,28 @@ void CrapPhoAnalysis(TString outputName="analysis"){
   // REMOVE THE LINE BELOW IF NOT RUNNING IN CMSSW ENVIRONMENT
   //gSystem->Load("libCondFormatsJetMETObjects.so");
 
-  //gSystem->Load("../SUSYPhotonAnalysis/SusyNtuplizer/macro/libSusyEvent.so");
+  gSystem->Load("../../SUSYPhotonAnalysis/SusyNtuplizer/macro/libSusyEvent.so");
 
-  gSystem->AddIncludePath("-I" + TString(gSystem->Getenv("CMSSW_RELEASE_BASE")) + "/src");
+  //gSystem->AddIncludePath("-I" + TString(gSystem->Getenv("CMSSW_RELEASE_BASE")) + "/src");
 
   // Analysis macro
   //gROOT->LoadMacro("SusyEventAnalyzer.cc+");
-  gSystem->Load("../lib/libCrapPhoAnalysis.so");
+
+  gSystem->AddIncludePath("-I /Users/dmason/play/photons/SUSYPhotonAnalysis/SusyNtuplizer/src");
+  gSystem->AddIncludePath("-I /Users/dmason/play/photons/Crap");
+
+  //gSystem->Load("/Users/dmason/play/photons/SUSYPhotonAnalysis/SusyNtuplizer/src/SusyEvent.h+");
+  //gROOT->ProcessLine(".L ../SusyEvent.h+");
+  //gROOT->ProcessLine(".L ../Crap.h+");
+
+  //gSystem->Load("../lib/libCrapPhoAnalysis.so");
+  
+  gROOT->LoadMacro("CrapPhoAnalysis.cc++");
 
   // chain of inputs
   TChain chain("susyTree");
-  chain.Add("susyEvents.root");
+  //chain.Add("susyEvents.root");
+  chain.Add("root://cmseos.fnal.gov//eos/uscms/store/user/lpcpjm/SusyNtuples/cms538v1/Run2012D-22Jan2013-v1/DoublePhoton/susyEvents_361_1_fC3.root");
 
   // Disabling unused branches will speed up the processing significantly, but risks inconsistencies if wrong trees are turned off.
   // Make sure you know what you are doing.
@@ -49,10 +60,10 @@ void CrapPhoAnalysis(TString outputName="analysis"){
 
   sea.SetOutput(outputName);
   sea.SetLogFile("cout"); // set to a full path to a file to output log to a file
-  sea.SetPrintInterval(10000);
+  sea.SetPrintInterval(1000);
   sea.SetPrintLevel(0);
   sea.AddHltName("HLT_Photon36_CaloId10_Iso50_Photon22_CaloId10_Iso50");
-  sea.CopyEvents(false);
+  sea.CopyEvents(true);
   sea.SetProcessNEvents(-1);
 
   TStopwatch ts;

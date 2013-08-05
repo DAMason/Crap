@@ -49,12 +49,18 @@
 
 // Inherit from Crap
 class CrapPhoAnalysis: public Crap {
+  public:
+  CrapPhoAnalysis(TTree& tree):Crap(tree) {}
   /* Main analyzer function to be defined */
   virtual void Run();
 };
 
 
 ////////// MAIN ANALYSIS FUNCTION //////////
+
+
+
+
 void
 CrapPhoAnalysis::Run()
 {
