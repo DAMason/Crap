@@ -95,7 +95,9 @@ SusyEvent.h
 # set everything needed for the root dictonary and create the
 # dictionary
 #set(CrapPhoAnalysis_LINKDEF PhoAnalysis/CrapPhoAnalysisLinkDef.h )
-set(CrapPhoAnalysis_LINKDEF ${SUSYNTUPLE_SRC}/SusyNtuplizer_LinkDef.h )
+set(CrapPhoAnalysis_LINKDEF 
+  ${SUSYNTUPLE_SRC}/SusyNtuplizer_LinkDef.h 
+  )
 
 set(CrapPhoAnalysis_DICTIONARY ${CMAKE_CURRENT_BINARY_DIR}/CrapPhoAnalysisDict.cxx) 
 ROOT_GENERATE_DICTIONARY("${CrapPhoAnalysis_HEADERS}" "${CrapPhoAnalysis_LINKDEF}" "${CrapPhoAnalysis_DICTIONARY}" "${INCLUDE_DIRECTORIES}")
