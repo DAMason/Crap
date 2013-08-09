@@ -274,23 +274,7 @@ CrapPhoAnalysis::Run()
           if (AltFakeSelector(photon,event.rho25,"loose")) fakealtPhotons.push_back(&photon);
         }
         
-        
-
-//        if(photon.nPixelSeeds > 0) continue;
-
-//        if(photon.hadTowOverEm > 0.05) continue;
-
-//        double effA[3];
-//        photonEffectiveAreas(absEta, effA);
-
-//        if(photon.neutralHadronIso - event.rho25 * effA[1] - 0.04 * pt > 3.5) continue;
-
-//        if(photon.photonIso - event.rho25 * effA[2] - 0.005 * pt > 1.3) continue;
-
-//        double chIso(photon.chargedHadronIso - event.rho25 * effA[0]);
-
-//        if(photon.sigmaIetaIeta < 0.012 && chIso < 2.6) goodPhotons.push_back(&photon);
-//        else if(photon.sigmaIetaIeta < 0.014 && chIso < 15.) fakePhotons.push_back(&photon);
+      
       }
 
       ////////// SORT SELECTED PHOTONS //////////
@@ -348,7 +332,7 @@ CrapPhoAnalysis::Run()
       /* number of events with two good photons and no muon */
       if(goodPhotons.size() >= 2) nCnt[4]++;
       /* number of events with two fake photons and no muon */
-      if(fakePhotons.size() >= 2) nCnt[5]++;
+      if(fakePhotons.size() >= 2) nCnt[5]++;      
 
 
       ////////// VETO EVENTS WITH LOOSE ELECTRONS //////////
