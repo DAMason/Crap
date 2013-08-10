@@ -4,18 +4,9 @@
 #include <iostream>
 
 #include "../Crap.h"
+#include "CrapPhoAnalysis.h"
 
 using namespace std;
-
-// Inherit from Crap
-class CrapPhoAnalysis: public Crap {
-  public:
-  CrapPhoAnalysis(TTree& tree):Crap(tree) {}
-
-  /* Main analyzer function to be defined */
-  virtual void Run();
-};
-
 
 int main(int argc, char* argv[]) {
 

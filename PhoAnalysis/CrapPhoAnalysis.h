@@ -5,6 +5,7 @@
 #include <TTree.h>
 #include "../Crap.h"
 
+// Inherit from Crap
 
 class CrapPhoAnalysis: public Crap {
   public:
@@ -12,3 +13,4 @@ class CrapPhoAnalysis: public Crap {
   /* Main analyzer function to be defined */
   virtual void Run();
 };
+
