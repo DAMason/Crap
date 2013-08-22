@@ -17,7 +17,7 @@ project(Crap)
 include(FindROOT.cmake)
 
 # Point to SusyEvent src (incorporated into local libs)
-set(SUSYNTUPLE_SRC /Users/dmason/play/photons/SUSYPhotonAnalysis/SusyNtuplizer/src)
+set(SUSYNTUPLE_SRC ../SUSYPhotonAnalysis/SusyNtuplizer/src)
 
 #Check the compiler and set the compile and link flags
 set(CMAKE_BUILD_TYPE Debug)
@@ -32,7 +32,7 @@ set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}/bin")
 
 set(INCLUDE_DIRECTORIES
 ${ROOT_INCLUDE_DIR}
-# ${SUSYNTUPLE_SRC}
+${SUSYNTUPLE_SRC}
 )
 
 include_directories( ${INCLUDE_DIRECTORIES})
@@ -89,7 +89,7 @@ PhoAnalysis/CrapPhoAnalysis.cc
 
 # fill list of header files 
 set(CrapPhoAnalysis_HEADERS
-SusyEvent.h 
+${SUSYNTUPLE_SRC}/SusyEvent.h 
 )
 
 # set everything needed for the root dictonary and create the
@@ -149,7 +149,7 @@ LLAnalysis/CrapLLAnalysis.cc
 
 # fill list of header files
 set(CrapLLAnalysis_HEADERS
-SusyEvent.h
+${SUSYNTUPLE_SRC}/SusyEvent.h
 LLAnalysis/CrapLLAnalysis.h
 )
 
