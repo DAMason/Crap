@@ -131,8 +131,11 @@ int main(int argc, char* argv[]) {
   } else {
     while (!infilelist.eof()) {
       getline(infilelist,fileline);
-      //InputFiles.push_back(fileline);
-      chain.Add(fileline.c_str());
+      if (fileline.find("root")!=-1) {
+        cout << "File input: " << fileline.c_str() << endl;
+        //InputFiles.push_back(fileline);
+        chain.Add(fileline.c_str());
+      }
     }
     infilelist.close();
   }
