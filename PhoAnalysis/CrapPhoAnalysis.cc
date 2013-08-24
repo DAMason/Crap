@@ -173,10 +173,17 @@ CrapPhoAnalysis::Run()
 
     TH1F* h_met_gg(new TH1F("h_met_gg","#gamma#gamma #slash{E}_{T};#slash{E}_{T} (GeV);Events / GeV", 200, 0., 200.));
     TH1F* h_met_ff(new TH1F("h_met_ff","ff #slash{E}_{T};#slash{E}_{T} (GeV);Events / GeV", 200, 0., 200.));
+    TH1F* h_met_ffAlt(new TH1F("h_met_ffAlt","ffAlt #slash{E}_{T};#slash{E}_{T} (GeV);Events / GeV", 200, 0., 200.));
+    TH1F* h_met_ee(new TH1F("h_met_ee","ee #slash{E}_{T};#slash{E}_{T} (GeV);Events / GeV", 200, 0., 200.));
     TH1F* h_diEMPt_gg(new TH1F("h_diEMPt_gg", "#gamma#gamma diEM P_{T};diEM P_{T} (GeV);Events / GeV", 200, 0., 200.));
     TH1F* h_diEMPt_ff(new TH1F("h_diEMPt_ff", "ff diEM P_{T};diEM P_{T} (GeV);Events / GeV", 200, 0., 200.));
+    TH1F* h_diEMPt_ffAlt(new TH1F("h_diEMPt_ffAlt", "ffAlt diEM P_{T};diEM P_{T} (GeV);Events / GeV", 200, 0., 200.));
+    TH1F* h_diEMPt_ee(new TH1F("h_diEMPt_ee", "ee diEM P_{T};diEM P_{T} (GeV);Events / GeV", 200, 0., 200.));
     TH1F* h_PFDiEMPt_gg(new TH1F("h_PFDiEMPt_gg", "#gamma#gamma PF diEM P_{T};diEM P_{T} (GeV);Events / GeV", 200, 0., 200.));
     TH1F* h_PFDiEMPt_ff(new TH1F("h_PFDiEMPt_ff", "ff PF diEM P_{T};diEM P_{T} (GeV);Events / GeV", 200, 0., 200.));
+    TH1F* h_PFDiEMPt_ffAlt(new TH1F("h_PFDiEMPt_ffAlt", "ffAlt PF diEM P_{T};diEM P_{T} (GeV);Events / GeV", 200, 0., 200.));
+    TH1F* h_PFDiEMPt_ee(new TH1F("h_PFDiEMPt_ee", "ee PF diEM P_{T};diEM P_{T} (GeV);Events / GeV", 200, 0., 200.));
+
 
 
 #ifdef CMSSWENVIRONMENT // protecting if not CMSSW environment -- set above
@@ -267,11 +274,24 @@ CrapPhoAnalysis::Run()
         if (! EMSelector(photon)) continue;
 
         if (ESelector(photon)) {
-          if (PhoSelector(photon,event.rho25,"loose")) electronPhotons.push_back(&photon);
+          
+          if (PhoSelector(photon,event.rho25,"loose")) {
+            electronPhotons.push_back(&photon);
+          }
+          
         } else {
-          if (PhoSelector(photon,event.rho25,"loose")) goodPhotons.push_back(&photon);
-          if (FakeSelector(photon,event.rho25,"loose")) fakePhotons.push_back(&photon);
-          if (AltFakeSelector(photon,event.rho25,"loose")) fakealtPhotons.push_back(&photon);
+          if (PhoSelector(photon,event.rho25,"loose")) {
+            goodPhotons.push_back(&photon);
+          }
+          
+          if (FakeSelector(photon,event.rho25,"loose")) {
+            fakePhotons.push_back(&photon);
+          }
+          
+          if (AltFakeSelector(photon,event.rho25,"loose")) {
+            fakealtPhotons.push_back(&photon);
+          }
+          
         }
         
       
@@ -494,6 +514,9 @@ CrapPhoAnalysis::Run()
 
       if(nGoodJets > 0){
         if(goodPhotons.size() >= 2){
+          
+          if (copyEvents) ggTree->Fill();
+          
           h_met_gg->Fill(metV.Mod());
           TLorentzVector diEMP(goodPhotons[0]->momentum);
           diEMP += goodPhotons[1]->momentum;
@@ -506,6 +529,9 @@ CrapPhoAnalysis::Run()
           h_PFDiEMPt_gg->Fill(PFDiEMP.Pt());
         }
         if(fakePhotons.size() >= 2){
+          
+          if (copyEvents) ffTree->Fill();
+          
           h_met_ff->Fill(metV.Mod());
           TLorentzVector diEMP(fakePhotons[0]->momentum);
           diEMP += fakePhotons[1]->momentum;
@@ -517,12 +543,48 @@ CrapPhoAnalysis::Run()
               PFDiEMP += pfParticles[iPF]->momentum;
           h_PFDiEMPt_ff->Fill(PFDiEMP.Pt());
         }
+        
+        if(fakealtPhotons.size() >= 2){
+          
+          if (copyEvents) ffaltTree->Fill();
+          
+          h_met_ffAlt->Fill(metV.Mod());
+          TLorentzVector diEMP(fakealtPhotons[0]->momentum);
+          diEMP += fakealtPhotons[1]->momentum;
+          h_diEMPt_ffAlt->Fill(diEMP.Pt());
+          
+          TLorentzVector PFDiEMP;
+          for(unsigned iPF(0); iPF != nPF; ++iPF)
+            if(pfParticles[iPF]->momentum.DeltaR(fakealtPhotons[0]->momentum) < 0.3 || pfParticles[iPF]->momentum.DeltaR(fakealtPhotons[1]->momentum) < 0.3)
+              PFDiEMP += pfParticles[iPF]->momentum;
+          h_PFDiEMPt_ff->Fill(PFDiEMP.Pt());
+        }
+
+        
+        if(electronPhotons.size() >= 2){
+          
+          if (copyEvents) eeTree->Fill();
+          
+          h_met_ee->Fill(metV.Mod());
+          TLorentzVector diEMP(electronPhotons[0]->momentum);
+          diEMP += electronPhotons[1]->momentum;
+          h_diEMPt_ee->Fill(diEMP.Pt());
+          
+          TLorentzVector PFDiEMP;
+          for(unsigned iPF(0); iPF != nPF; ++iPF)
+            if(pfParticles[iPF]->momentum.DeltaR(electronPhotons[0]->momentum) < 0.3 || pfParticles[iPF]->momentum.DeltaR(electronPhotons[1]->momentum) < 0.3)
+              PFDiEMP += pfParticles[iPF]->momentum;
+          h_PFDiEMPt_ff->Fill(PFDiEMP.Pt());
+        }
+
+        
+        
       }
 
       ////////// FILL SKIMS //////////
       if(copyEvents){
-        if(goodPhotons.size() >= 2) ggTree->Fill();
-        if(fakePhotons.size() >= 2) ffTree->Fill();
+        if(fakealtPhotons.size() >= 2) ffaltTree->Fill();
+        if(electronPhotons.size() >=2) eeTree->Fill();
       }
 
     }
@@ -558,12 +620,22 @@ CrapPhoAnalysis::Run()
     if(copyEvents){
       event.releaseTree(*ggTree);
       event.releaseTree(*ffTree);
+      event.releaseTree(*ffaltTree);
+      event.releaseTree(*eeTree);
+
 
       ggFile->cd();
       ggFile->Write();
 
       ffFile->cd();
       ffFile->Write();
+      
+      ffaltFile->cd();
+      ffaltFile->Write();
+      
+      eeFile->cd();
+      eeFile->Write();
+      
     }
   }
   catch(std::exception& e){
@@ -582,6 +654,9 @@ CrapPhoAnalysis::Run()
 
   delete ggFile;
   delete ffFile;
+  delete ffaltFile;
+  delete eeFile;
+
   delete fout;
 }
 
