@@ -49,6 +49,7 @@
 #include "../UtilPieces.h"
 
 #include "CrapPhoAnalysis.h"
+#include "../PhoHistClass.h"
 
 
 ////////// MAIN ANALYSIS FUNCTION //////////
@@ -109,6 +110,7 @@ CrapPhoAnalysis::Run()
   TFile* ffaltFile(0);
   TFile* eeFile(0);
   TFile* fout(0);
+  
 
   try{
 
@@ -159,6 +161,9 @@ CrapPhoAnalysis::Run()
       }
 
     }
+    
+    
+
 
     ////////// INITIALIZE HISTOGRAM OUTPUT //////////
     if(printLevel > 0) out << "Open file for histograms" << std::endl;
@@ -168,6 +173,14 @@ CrapPhoAnalysis::Run()
       std::cerr << "Cannot open output file hist_" << outputName << ".root" << std::endl;
       throw std::runtime_error("IOError");
     }
+    
+    PhoHistClass photonhists(fout,"Photons"); // initialize single object histograms...
+    PhoHistClass fakehists(fout,"Fakes");
+    PhoHistClass altfakehists(fout,"AltFakes");
+    PhoHistClass electronhists(fout,"Electrons");
+    
+
+    fout->cd();
 
     if(printLevel > 0) out << "Define histograms" << std::endl;
 
@@ -277,19 +290,23 @@ CrapPhoAnalysis::Run()
           
           if (PhoSelector(photon,event.rho25,"loose")) {
             electronPhotons.push_back(&photon);
+            electronhists.Fill(photon);
           }
           
         } else {
           if (PhoSelector(photon,event.rho25,"loose")) {
             goodPhotons.push_back(&photon);
+            photonhists.Fill(photon);
           }
           
           if (FakeSelector(photon,event.rho25,"loose")) {
             fakePhotons.push_back(&photon);
+            fakehists.Fill(photon);
           }
           
           if (AltFakeSelector(photon,event.rho25,"loose")) {
             fakealtPhotons.push_back(&photon);
+            altfakehists.Fill(photon);
           }
           
         }

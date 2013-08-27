@@ -82,6 +82,7 @@ endif (CMAKE_SYSTEM_NAME MATCHES Darwin)
 
 # List of source files
 set(CrapPhoAnalysis_SRCS
+PhoHistClass.cpp
 ${SUSYNTUPLE_SRC}/SusyEvent.cc
 PhoAnalysis/CrapPhoAnalysis.cc
 )
