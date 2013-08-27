@@ -40,7 +40,7 @@ PhoHistClass::PhoHistClass(TFile* rootfile,string namestring) {
   string manglednamestring=namestring;
   manglednamestring.erase(remove(manglednamestring.begin(),manglednamestring.end(), ' '), manglednamestring.end()); // removes all ' '
   
-  cout << histnames.size() << " Single object branches defined -- this one named << " << mangledstring << endl;
+  cout << histnames.size() << " Single object branches defined -- this one named: " << manglednamestring << endl;
   
   if (histnames.size()==0 || find(histnames.begin(),histnames.end(),manglednamestring) == histnames.end()) { // if we don't already have it
     histnames.push_back(manglednamestring);
@@ -93,10 +93,19 @@ void PhoHistClass::Fill(susy::Photon const& pho,float weight)
   h_Pt->Fill(pho.momentum.Pt(),weight);
   h_Eta->Fill(pho.momentum.Eta(),weight);
   h_Phi->Fill(pho.momentum.Phi(),weight);
-
-//  h_seedTime->Fill(pho.)   // More later...
-  
-  
+  h_seedTime->Fill(pho.seedTime,weight);
+  h_nSeeds->Fill(pho.nPixelSeeds,weight);
+  h_hOverE->Fill(pho.hadronicOverEm,weight);
+  h_sigiEtaiEta->Fill(pho.sigmaIetaIeta,weight);
+  h_sigiPhiiPhi->Fill(pho.sigmaIphiIphi,weight);
+  h_chargedHadIso->Fill(pho.chargedHadronIso,weight);
+  h_neutralHadIso->Fill(pho.neutralHadronIso,weight);
+  h_photonIso->Fill(pho.photonIso,weight);
+  h_WorstOtherVxchHadIso->Fill(pho.worstOtherVtxChargedHadronIso,weight);
+  h_ecalIso->Fill(pho.ecalRecHitSumEtConeDR03,weight);
+  h_trkIso->Fill(pho.trkSumPtHollowConeDR03,weight);
+  h_hcalIso->Fill(pho.hcalIsoConeDR03_2012,weight);
+  h_nTrkHollow03->Fill(pho.nTrkHollowConeDR03,weight);
   
 }
 
