@@ -29,22 +29,6 @@
 #include <map>
 #include <utility>
 
-// Not particularly enamored with this, but since there seem to be several places scattered around
-// where the Jet correction code is enabled, resorting to preprocessor directives to switch this
-// code in or out.  Ultimately controlled by this #define:
-
-//#define CMSSWENVIRONMENT=true
-
-// uncomment above to enable changing the jet corrections (requires a CMSSW environment).
-
-
-#ifdef CMSSWENVIRONMENT // protecting if not in CMSSW environment
-
-#include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h" // to access the JEC scales
-#include "CondFormats/JetMETObjects/interface/JetCorrectionUncertainty.h" // to access the uncertainties
-
-#endif //CMSSWENVIRONMENT
-
 #include "../Crap.h"
 #include "../UtilPieces.h"
 
@@ -59,27 +43,23 @@
 void
 
 CrapPhoAnalysis::Run()
-{
-  // would be good to define what the indices actually end up meaning...
-  // 0 total number of events before lumi mask -- should be total read
-  // Then from below:
-  //    out << " passed preselection                                          : " << nCnt[1] << " (" << nCnt[1]/float(nCnt[0]) << ")" << std::endl;
-  //    out << " goodPhotons >= 2                                             : " << nCnt[2] << " (" << nCnt[2]/float(nCnt[1]) << ")" << std::endl;
-  //    out << " fakePhotons >= 2                                             : " << nCnt[3] << " (" << nCnt[3]/float(nCnt[1]) << ")" << std::endl;
-  //    out << " alternate fakePhotons >= 2                                   : " << nCnt[12] << " (" << nCnt[12]/float(nCnt[1]) << ")" << std::endl;
-  //    out << " elecPhotons >= 2                                             : " << nCnt[13] << " (" << nCnt[13]/float(nCnt[1]) << ")" << std::endl;
-  //    out << " elecPhotons in Z window >= 2                                 : " << nCnt[14] << " (" << nCnt[14]/float(nCnt[1]) << ")" << std::endl;
-  //    out << " goodPhotons >= 2 && 0 muon                                   : " << nCnt[4] << " (" << nCnt[4]/float(nCnt[1]) << ")" << std::endl;
-  //    out << " fakePhotons >= 2 && 0 muon                                   : " << nCnt[5] << " (" << nCnt[5]/float(nCnt[1]) << ")" << std::endl;
-  //    out << " goodPhotons >= 2 && 0 lepton                                 : " << nCnt[6] << " (" << nCnt[6]/float(nCnt[1]) << ")" << std::endl;
-  //    out << " fakePhotons >= 2 && 0 lepton                                 : " << nCnt[7] << " (" << nCnt[7]/float(nCnt[1]) << ")" << std::endl;
-  //    out << " goodPhotons >= 2 && 0 lepton && >= 1 good jet                : " << nCnt[8] << " (" << nCnt[8]/float(nCnt[1]) << ")" << std::endl;
-  //    out << " goodPhotons >= 2 && 0 lepton && >= 1 good jet                : " << nCnt[9] << " (" << nCnt[9]/float(nCnt[1]) << ")" << std::endl;
-  //    out << " goodPhotons >= 2 && 0 lepton && >= 1 good jet && MET > 50 GeV: " << nCnt[10] << " (" << nCnt[10]/float(nCnt[1]) << ")" << std::endl;
-  //    out << " goodPhotons >= 2 && 0 lepton && >= 1 good jet && MET > 50 GeV: " << nCnt[11] << " (" << nCnt[11]/float(nCnt[1]) << ")" << std::endl;
-
-  int nCnt[20];
-  for(int i(0); i<20; i++) nCnt[i] = 0;
+{  
+  
+  // Initialize some marginally intelligible counters...
+  
+  int NRead(0);
+  int NPresel(0);
+  
+  int Ngg(0);
+  int Nff(0);
+  int NffAlt(0);
+  int Nee(0);
+  int NeeZ(0);
+  int Nfg(0);
+  int Ngf(0);
+  int Neg(0);
+  int NfAltg(0);
+  int NgfAlt(0);
 
   ////////// TEXT OUTPUT //////////
 
@@ -99,6 +79,7 @@ CrapPhoAnalysis::Run()
   TFile* ffFile(0);
   TFile* ffaltFile(0);
   TFile* eeFile(0);
+  TFile* egFile(0);
   TFile* fout(0);
   
 
@@ -109,6 +90,7 @@ CrapPhoAnalysis::Run()
     TTree* ffTree(0);
     TTree* ffaltTree(0);
     TTree* eeTree(0);
+    TTree* egTree(0);
 
     if(copyEvents){
 
@@ -118,9 +100,10 @@ CrapPhoAnalysis::Run()
       ffFile = TFile::Open("susyEvents_" + outputName + "_ff.root", "RECREATE");
       ffaltFile = TFile::Open("susyEvents_" + outputName + "_ffalt.root", "RECREATE");
       eeFile = TFile::Open("susyEvents_" + outputName + "_ee.root", "RECREATE");
+      egFile = TFile::Open("susyEvents_" + outputName + "_eg.root", "RECREATE");
+      
 
-
-      if(!ggFile || ggFile->IsZombie() || !ffFile || ffFile->IsZombie() || !ffaltFile || ffaltFile->IsZombie() || !eeFile || eeFile->IsZombie() ){
+      if(!ggFile || ggFile->IsZombie() || !ffFile || ffFile->IsZombie() || !ffaltFile || ffaltFile->IsZombie() || !eeFile || eeFile->IsZombie() || !egFile || egFile->IsZombie()){
         std::cerr << "Cannot open output file susyEvents_" << outputName << ".root" << std::endl;
         throw std::runtime_error("IOError");
       }
@@ -140,6 +123,10 @@ CrapPhoAnalysis::Run()
         eeFile->cd();
         eeTree = new TTree("susyTree", "SUSY Event");
         eeTree->SetAutoSave(10000000);
+        
+        egFile->cd();
+        egTree = new TTree("susyTree", "SUSY Event");
+        egTree->SetAutoSave(10000000);
 
 
         /* Register the output trees to the Event object - the branches will be booked internally */
@@ -147,6 +134,8 @@ CrapPhoAnalysis::Run()
         event.addOutput(*ffTree);
         event.addOutput(*ffaltTree);
         event.addOutput(*eeTree);
+        event.addOutput(*egTree);
+
 
       }
 
@@ -197,6 +186,7 @@ CrapPhoAnalysis::Run()
     long iEntry(0);
     while(iEntry != processNEvents && event.getEntry(iEntry++) != 0){
 
+    
       if(printLevel > 1 || iEntry % printInterval == 0)
         out << "Begin processing event " << iEntry - 1 << ". Current: run=" << event.runNumber << ", event=" << event.eventNumber << std::endl;
 
@@ -204,7 +194,7 @@ CrapPhoAnalysis::Run()
       if(printLevel > 2) event.Print(out);
 
       /* total number of events */
-      nCnt[0]++;
+      NRead++;
 
       ////////// GOOD LUMI FILTER //////////
       if(printLevel > 1) out << "Apply good lumi list." << std::endl;
@@ -235,7 +225,7 @@ CrapPhoAnalysis::Run()
       if(printLevel > 1) out << "Event passes preselection." << std::endl;
 
       /* number of events passing preselection */
-      nCnt[1]++;
+      NPresel++;
 
       ////////// SELECT GOOD AND FAKE PHOTONS //////////
       if(printLevel > 1) out << "Find good barrel photons in the event" << std::endl;
@@ -295,7 +285,7 @@ CrapPhoAnalysis::Run()
       std::sort(fakealtPhotons.begin(),fakealtPhotons.end(), PtGreater<susy::Photon>);
       
       // there's a continue back to the event loop here...
-      if(electronPhotons.size()+goodPhotons.size()+fakePhotons.size() < 2 || electronPhotons.size()+goodPhotons.size()+fakealtPhotons.size() < 2) continue;
+      if(electronPhotons.size()+goodPhotons.size()+fakePhotons.size() < 2 && electronPhotons.size()+goodPhotons.size()+fakealtPhotons.size() < 2) continue;
       // i.e. dropping out of loop if we don't have some combination of 2 useful EM objects...
       
       
@@ -314,26 +304,9 @@ CrapPhoAnalysis::Run()
         out << " has >= 2 good photons AND >= 2 fake photons. Check for pathologies!" << std::endl;
       }
       
-      // Just some counting...
-
-      /* number of events with two good photons */
-      if(goodPhotons.size() >= 2 && goodPhotons[0]->momentum.Pt() > 40.0) nCnt[2]++;
-      /* number of events with two fake photons */
-      if(fakePhotons.size() >= 2 && fakePhotons[0]->momentum.Pt() > 40.0) nCnt[3]++;
-      /* number of events with two alternately defined fake photons */
-      if(fakealtPhotons.size() >= 2 && fakealtPhotons[0]->momentum.Pt() > 40.0) nCnt[12]++;
-      /* number of events with two electronish photons */
-      if(electronPhotons.size() >= 2 && electronPhotons[0]->momentum.Pt() > 40.0) {
-        nCnt[13]++;
-        // hacky way to do this:
-        float eemass=(electronPhotons[0]->momentum+electronPhotons[1]->momentum).M();
-        if (eemass>80.0 && eemass<110.0) nCnt[14]++;
-      }
-      // number of events with two good photons and any or no muon
-      if(goodPhotons.size() >= 2) nCnt[4]++;
-      // number of events with two fake photons and any or no muon
-      if(fakePhotons.size() >= 2) nCnt[5]++;
-
+      
+      // Got various flavors of photons -- now get other bits...
+      
 
       //////////////////////////////////// Build vector of loose muons
       
@@ -400,12 +373,7 @@ CrapPhoAnalysis::Run()
       std::sort(keptJets.begin(),keptJets.end(),PtGreater<susy::PFJet>);
 
       
-      if(nGoodJets > 0){
-        /* number of events with two good photons, no lepton, and >=1 good jets */
-        if(goodPhotons.size() >= 2) nCnt[8]++;
-        /* number of events with two fake photons, no lepton, and >=1 good jets */
-        if(fakePhotons.size() >= 2) nCnt[9]++;
-      }
+
       
       
       
@@ -416,12 +384,6 @@ CrapPhoAnalysis::Run()
       
       TVector2 const& metV(event.metMap["pfType01CorrectedMet"].mEt);
 
-      if(nGoodJets > 0 && metV.Mod() > 50.){
-        /* number of events with two good photons, no lepton, >=1 good jets, and MET > 50 GeV */
-        if(goodPhotons.size() >= 2) nCnt[10]++;
-        /* number of events with two fake photons, no lepton, >=1 good jets, and MET > 50 GeV */
-        if(fakePhotons.size() >= 2) nCnt[11]++;
-      }
 
       
       
@@ -445,9 +407,74 @@ CrapPhoAnalysis::Run()
       // Now we have required there be two 25 GeV EM objects in some combination of electron+photon+fake or electron+photon+altfake
       // We have filled vectors of the various photon flavors, muons, electrons and jets as well.
       
+      ////////// Event Classification //////////
+      
+      bool IsGGEvent=false;
+      bool IsFFEvent=false;
+      bool IsEEEvent=false;
+      bool IsEGEvent=false;
+      bool IsFGEvent=false;
+      bool IsGFEvent=false;
+      
+      bool IsAltFFEvent=false;
+      bool IsAltGFEvent=false;
+      bool IsAltFGEvent=false;
       
       
+      if (goodPhotons.size()>=2 && goodPhotons[0]->momentum.Pt()>40.0) {
+        Ngg++;
+        IsGGEvent=true;
+      }
       
+      if (electronPhotons.size()>=2 && electronPhotons[0]->momentum.Pt()>40.0) {
+        Nee++;
+        IsEEEvent=true;
+      }
+      
+      if (fakealtPhotons.size()>=2 && fakealtPhotons[0]->momentum.Pt()>40.0) {
+        NffAlt++;
+        IsAltFFEvent=true;
+      }
+      
+      if (fakePhotons.size()>=2 && fakePhotons[0]->momentum.Pt()>40.0) {
+        Nff++;
+        IsFFEvent=true;
+      }
+      
+      if (goodPhotons.size()>=1 && electronPhotons.size()>=1
+                                && !IsGGEvent
+                                && !IsEEEvent
+                                && (goodPhotons[0]->momentum.Pt() > 40.0 || electronPhotons[0]->momentum.Pt()>40.0)) {
+          Neg++;
+          IsEGEvent=true;
+      }
+      
+      if (goodPhotons.size()>=1 && fakePhotons.size()>=1
+                                && !IsGGEvent
+                                && !IsFFEvent) {
+        if (goodPhotons[0]->momentum.Pt() > 40.0 && (goodPhotons[0]->momentum.Pt() > fakePhotons[0]->momentum.Pt()) ) {
+          Ngf++;
+          IsGFEvent=true;
+        }
+        if (fakePhotons[0]->momentum.Pt() > 40.0 && (fakePhotons[0]->momentum.Pt() > goodPhotons[0]->momentum.Pt()) ) {
+          Nfg++;
+          IsFGEvent=true;
+        } 
+      }// f+g if
+      
+      if (goodPhotons.size()>=1 && fakealtPhotons.size()>=1
+                                && !IsGGEvent
+                                && !IsAltFFEvent) {
+        if (goodPhotons[0]->momentum.Pt() > 40.0 && (goodPhotons[0]->momentum.Pt() > fakealtPhotons[0]->momentum.Pt()) ) {
+          NgfAlt++;
+          IsAltGFEvent=true;
+        }
+        if (fakealtPhotons[0]->momentum.Pt() > 40.0 && (fakealtPhotons[0]->momentum.Pt() > goodPhotons[0]->momentum.Pt()) ) {
+          NfAltg++;
+          IsAltFGEvent=true;
+        }
+      } // alt f+g if
+     
       
       ////////// FILL HISTOGRAMS //////////
 
@@ -455,22 +482,18 @@ CrapPhoAnalysis::Run()
       
       
       
-      
-      // number of events with two good photons and no lepton
-      if(goodPhotons.size() >= 2) nCnt[6]++;
-      // number of events with two fake photons and no lepton
-      if(fakePhotons.size() >= 2) nCnt[7]++;
-      
+            
       
       
 
 
       ////////// FILL SKIMS //////////
       if(copyEvents){
-        if(fakePhotons.size() >=2) ffTree->Fill();
-        if(goodPhotons.size() >=2) ggTree->Fill();
-        if(fakealtPhotons.size() >= 2) ffaltTree->Fill();
-        if(electronPhotons.size() >=2) eeTree->Fill();
+        if(IsFFEvent) ffTree->Fill();
+        if(IsGGEvent) ggTree->Fill();
+        if(IsAltFFEvent) ffaltTree->Fill();
+        if(IsEEEvent) eeTree->Fill();
+        if(IsEGEvent) egTree->Fill();
       }
 
     }
@@ -478,22 +501,19 @@ CrapPhoAnalysis::Run()
     ////////// END OF EVENT LOOP //////////
 
     out << " ----------------- Job Summary ----------------- " << std::endl;
-    out << " Total events                                                 : " << nCnt[0] << std::endl;
-    if(nCnt[0] > 0){
-      out << " passed preselection                                          : " << nCnt[1] << " (" << nCnt[1]/float(nCnt[0]) << ")" << std::endl;
-      out << " goodPhotons >= 2                                             : " << nCnt[2] << " (" << nCnt[2]/float(nCnt[1]) << ")" << std::endl;
-      out << " fakePhotons >= 2                                             : " << nCnt[3] << " (" << nCnt[3]/float(nCnt[1]) << ")" << std::endl;
-      out << " alternate fakePhotons >= 2                                   : " << nCnt[12] << " (" << nCnt[12]/float(nCnt[1]) << ")" << std::endl;
-      out << " elecPhotons >= 2                                             : " << nCnt[13] << " (" << nCnt[13]/float(nCnt[1]) << ")" << std::endl;
-      out << " elecPhotons in Z window >= 2                                 : " << nCnt[14] << " (" << nCnt[14]/float(nCnt[1]) << ")" << std::endl;
-      out << " goodPhotons >= 2 && 0 muon                                   : " << nCnt[4] << " (" << nCnt[4]/float(nCnt[1]) << ")" << std::endl;
-      out << " fakePhotons >= 2 && 0 muon                                   : " << nCnt[5] << " (" << nCnt[5]/float(nCnt[1]) << ")" << std::endl;
-      out << " goodPhotons >= 2 && 0 lepton                                 : " << nCnt[6] << " (" << nCnt[6]/float(nCnt[1]) << ")" << std::endl;
-      out << " fakePhotons >= 2 && 0 lepton                                 : " << nCnt[7] << " (" << nCnt[7]/float(nCnt[1]) << ")" << std::endl;
-      out << " goodPhotons >= 2 && 0 lepton && >= 1 good jet                : " << nCnt[8] << " (" << nCnt[8]/float(nCnt[1]) << ")" << std::endl;
-      out << " goodPhotons >= 2 && 0 lepton && >= 1 good jet                : " << nCnt[9] << " (" << nCnt[9]/float(nCnt[1]) << ")" << std::endl;
-      out << " goodPhotons >= 2 && 0 lepton && >= 1 good jet && MET > 50 GeV: " << nCnt[10] << " (" << nCnt[10]/float(nCnt[1]) << ")" << std::endl;
-      out << " goodPhotons >= 2 && 0 lepton && >= 1 good jet && MET > 50 GeV: " << nCnt[11] << " (" << nCnt[11]/float(nCnt[1]) << ")" << std::endl;
+    out << " Total events                                                 : " << NRead << std::endl;
+    if(NRead > 0){
+      out << " passed preselection                                          : " << NPresel << " (" << NPresel/float(NRead) << ")" << std::endl;
+      out << " goodPhotons >= 2                                             : " << Ngg     << " (" << Ngg/float(NPresel) << ")" << std::endl;
+      out << " fakePhotons >= 2                                             : " << Nff     << " (" << Nff/float(NPresel) << ")" << std::endl;
+      out << " fake-gamma                                                   : " << Nfg     << " (" << Nfg/float(NPresel) << ")" << std::endl;
+      out << " gamma-fake                                                   : " << Ngf     << " (" << Ngf/float(NPresel) << ")" << std::endl;
+      out << " alternate fakePhotons >= 2                                   : " << NffAlt  << " (" << NffAlt/float(NPresel) << ")" << std::endl;
+      out << " alternate fake-gamma                                         : " << NfAltg  << " (" << NfAltg/float(NPresel) << ")" << std::endl;
+      out << " gamma-alternate fake                                         : " << NgfAlt  << " (" << NgfAlt/float(NPresel) << ")" << std::endl;
+      out << " elecPhotons >= 2                                             : " << Nee     << " (" << Nee/float(NPresel) << ")" << std::endl;
+      out << " elecPhotons in Z window >= 2                                 : " << NeeZ    << " (" << NeeZ/float(NPresel) << ")" << std::endl;
+      out << " e-gamma (or gamma-e)                                         : " << Neg     << " (" << Neg/float(NPresel) << ")" << std::endl;
     }
 
     if(printLevel > 0) out << "Save outputs" << std::endl;
@@ -508,7 +528,9 @@ CrapPhoAnalysis::Run()
       event.releaseTree(*ffTree);
       event.releaseTree(*ffaltTree);
       event.releaseTree(*eeTree);
+      event.releaseTree(*egTree);
 
+      
 
       ggFile->cd();
       ggFile->Write();
@@ -521,6 +543,9 @@ CrapPhoAnalysis::Run()
       
       eeFile->cd();
       eeFile->Write();
+      
+      egFile->cd();
+      egFile->Write();
       
     }
   }
@@ -536,6 +561,8 @@ CrapPhoAnalysis::Run()
   delete ffFile;
   delete ffaltFile;
   delete eeFile;
+  delete egFile;
+
 
   delete fout;
 }
