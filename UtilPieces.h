@@ -134,7 +134,7 @@ float rhoCorrectedPhoIso(float iso,float eta,float rho) {
 
 
 void
-electronEffectiveAreas(double _eta, double &_effA)
+electronEffectiveAreas(float _eta, float &_effA)
 {
   // Source: EgammaEARhoCorrection twiki
   if(_eta < 1.)
@@ -259,6 +259,73 @@ AltFakeSelector(susy::Photon const& pho, float rho, std::string level) {
 
 return true;
 
+}
+
+bool
+PFJetSelector(susy::PFJet const & pfJet) {
+  
+  if (fabs(pfJet.momentum.Eta()) > 2.5 ) return false; // 2.5 makes more sense than the 2.6 documented...
+  
+  if (pfJet.nConstituents < 2) return false;
+  
+  if (pfJet.chargedMultiplicity == 0) return false;
+  
+  float energy(pfJet.momentum.E());
+  
+  if (pfJet.neutralHadronEnergy/energy > 0.99) return false;
+  if (pfJet.neutralEmEnergy /energy > 0.99) return false;
+  if (pfJet.chargedHadronEnergy < 1.e-6) return false;
+  if (pfJet.chargedEmEnergy/energy > 0.99) return false;
+  
+  float jecScale=pfJet.jecScaleFactors.find("L1FastL2L3")->second;
+  float jecScaleUncert=pfJet.jecUncertainty;
+  
+  if (jecScaleUncert > 0.2) return false;  // need to check what's up with this one...
+  
+  //Finally do a pT requirement based on corrected energy
+  
+  TLorentzVector corrP4(jecScale * pfJet.momentum);
+  
+  if (corrP4.Pt() < 30.) return false;
+  
+  return true;
+}
+
+
+bool MuonSelector(susy::Muon const & muon) {
+  
+  if (muon.momentum.Pt()<10.) return false;
+  
+  if (!muon.isPFMuon()) return false;
+  
+  if (!(muon.isTrackerMuon() || muon.isGlobalMuon())) return false;
+  
+  return true;
+}
+
+
+bool ElectronSelector(susy::Electron const & electron,susy::Vertex const& primVtx, float rho25) {
+  
+  if (electron.momentum.Pt()<10.) return false;
+  
+  float absEta(fabs(electron.momentum.Eta()));
+  bool isBarrel(absEta < susy::etaGapBegin);
+  if ((!isBarrel && absEta < susy::etaGapEnd) || absEta > susy::etaMax) return false; // barrel but no gap
+  
+  if(std::abs(electron.deltaEtaSuperClusterTrackAtVtx) > (isBarrel ? 0.007 : 0.01)) return false;
+  if(std::abs(electron.deltaPhiSuperClusterTrackAtVtx) > (isBarrel ? 0.8 : 0.7)) return false;
+  if(electron.sigmaIetaIeta > (isBarrel ? 0.01 : 0.03)) return false;
+  if(isBarrel && electron.hcalOverEcalBc > 0.15) return false;
+  
+  if(electron.gsfTrack == 0) return false;
+  if(std::abs(electron.gsfTrack->dxy(primVtx.position)) > 0.04) return false;
+  if(std::abs(electron.gsfTrack->dz(primVtx.position)) > 0.2) return false;
+  
+  float effA;
+  electronEffectiveAreas(absEta, effA);
+  if((electron.chargedHadronIso + electron.neutralHadronIso + electron.photonIso - rho25 * effA) / electron.momentum.Pt() > 0.15) return false;
+  
+  return true;
 }
 
 
