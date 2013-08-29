@@ -34,6 +34,7 @@
 
 #include "CrapPhoAnalysis.h"
 #include "../PhoHistClass.h"
+#include "../CounterClass.h"
 
 
 ////////// MAIN ANALYSIS FUNCTION //////////
@@ -45,21 +46,7 @@ void
 CrapPhoAnalysis::Run()
 {  
   
-  // Initialize some marginally intelligible counters...
-  
-  int NRead(0);
-  int NPresel(0);
-  
-  int Ngg(0);
-  int Nff(0);
-  int NffAlt(0);
-  int Nee(0);
-  int NeeZ(0);
-  int Nfg(0);
-  int Ngf(0);
-  int Neg(0);
-  int NfAltg(0);
-  int NgfAlt(0);
+ 
 
   ////////// TEXT OUTPUT //////////
 
@@ -152,6 +139,26 @@ CrapPhoAnalysis::Run()
       std::cerr << "Cannot open output file hist_" << outputName << ".root" << std::endl;
       throw std::runtime_error("IOError");
     }
+    
+    
+    
+    // Initialize some marginally intelligible counters...
+    
+    CounterClass NRead("NRead");
+    CounterClass NPresel("NPresel");
+    
+    CounterClass Ngg("Ngg");
+    CounterClass Nff("Nff");
+    CounterClass NffAlt("NffAlt");
+    CounterClass Nee("Nee");
+    CounterClass NeeZ("NeeZ");
+    CounterClass Nfg("Nfg");
+    CounterClass Ngf("Ngf");
+    CounterClass Neg("Neg");
+    CounterClass NfAltg("NfAltg");
+    CounterClass NgfAlt("NgfAlt");
+    
+    
     
     PhoHistClass photonhists(fout,"Photons"); // initialize single object histograms...
     PhoHistClass fakehists(fout,"Fakes");
@@ -501,19 +508,19 @@ CrapPhoAnalysis::Run()
     ////////// END OF EVENT LOOP //////////
 
     out << " ----------------- Job Summary ----------------- " << std::endl;
-    out << " Total events                                                 : " << NRead << std::endl;
-    if(NRead > 0){
-      out << " passed preselection                                          : " << NPresel << " (" << NPresel/float(NRead) << ")" << std::endl;
-      out << " goodPhotons >= 2                                             : " << Ngg     << " (" << Ngg/float(NPresel) << ")" << std::endl;
-      out << " fakePhotons >= 2                                             : " << Nff     << " (" << Nff/float(NPresel) << ")" << std::endl;
-      out << " fake-gamma                                                   : " << Nfg     << " (" << Nfg/float(NPresel) << ")" << std::endl;
-      out << " gamma-fake                                                   : " << Ngf     << " (" << Ngf/float(NPresel) << ")" << std::endl;
-      out << " alternate fakePhotons >= 2                                   : " << NffAlt  << " (" << NffAlt/float(NPresel) << ")" << std::endl;
-      out << " alternate fake-gamma                                         : " << NfAltg  << " (" << NfAltg/float(NPresel) << ")" << std::endl;
-      out << " gamma-alternate fake                                         : " << NgfAlt  << " (" << NgfAlt/float(NPresel) << ")" << std::endl;
-      out << " elecPhotons >= 2                                             : " << Nee     << " (" << Nee/float(NPresel) << ")" << std::endl;
-      out << " elecPhotons in Z window >= 2                                 : " << NeeZ    << " (" << NeeZ/float(NPresel) << ")" << std::endl;
-      out << " e-gamma (or gamma-e)                                         : " << Neg     << " (" << Neg/float(NPresel) << ")" << std::endl;
+    out << " Total events                                                 : " << NRead.Val() << std::endl;
+    if(NRead.Val() > 0){
+      out << " passed preselection                                          : " << NPresel.Val() << " (" << NPresel.Val()/float(NRead.Val()) << ")" << std::endl;
+      out << " goodPhotons >= 2                                             : " << Ngg.Val()     << " (" << Ngg.Val()/float(NPresel.Val()) << ")" << std::endl;
+      out << " fakePhotons >= 2                                             : " << Nff.Val()     << " (" << Nff.Val()/float(NPresel.Val()) << ")" << std::endl;
+      out << " fake-gamma                                                   : " << Nfg.Val()     << " (" << Nfg.Val()/float(NPresel.Val()) << ")" << std::endl;
+      out << " gamma-fake                                                   : " << Ngf.Val()     << " (" << Ngf.Val()/float(NPresel.Val()) << ")" << std::endl;
+      out << " alternate fakePhotons >= 2                                   : " << NffAlt.Val()  << " (" << NffAlt.Val()/float(NPresel.Val()) << ")" << std::endl;
+      out << " alternate fake-gamma                                         : " << NfAltg.Val()  << " (" << NfAltg.Val()/float(NPresel.Val()) << ")" << std::endl;
+      out << " gamma-alternate fake                                         : " << NgfAlt.Val()  << " (" << NgfAlt.Val()/float(NPresel.Val()) << ")" << std::endl;
+      out << " elecPhotons >= 2                                             : " << Nee.Val()     << " (" << Nee.Val()/float(NPresel.Val()) << ")" << std::endl;
+      out << " elecPhotons in Z window >= 2                                 : " << NeeZ.Val()    << " (" << NeeZ.Val()/float(NPresel.Val()) << ")" << std::endl;
+      out << " e-gamma (or gamma-e)                                         : " << Neg.Val()     << " (" << Neg.Val()/float(NPresel.Val()) << ")" << std::endl;
     }
 
     if(printLevel > 0) out << "Save outputs" << std::endl;
