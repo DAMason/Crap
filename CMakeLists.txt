@@ -84,6 +84,7 @@ endif (CMAKE_SYSTEM_NAME MATCHES Darwin)
 set(CrapPhoAnalysis_SRCS
 PhoHistClass.cpp
 CounterClass.cpp
+DiObjectPlotClass.cpp
 ${SUSYNTUPLE_SRC}/SusyEvent.cc
 PhoAnalysis/CrapPhoAnalysis.cc
 )

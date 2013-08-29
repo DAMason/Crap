@@ -29,7 +29,7 @@ public:
   void Fill(susy::Photon const& pho,float weight);
   void Fill(susy::Photon const& pho); // default weight of 1.0
 
-private:
+
   // Member data is for the most part just a bunch of histograms
   TH1F* h_Pt;
   TH1F* h_Eta;
@@ -47,6 +47,8 @@ private:
   TH1F* h_trkIso;
   TH1F* h_hcalIso;
   TH1F* h_nTrkHollow03;
+
+private:  
   
   static vector<string> histnames;
 };

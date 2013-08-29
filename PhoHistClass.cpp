@@ -40,7 +40,7 @@ PhoHistClass::PhoHistClass(TFile* rootfile,string namestring) {
   string manglednamestring=namestring;
   manglednamestring.erase(remove(manglednamestring.begin(),manglednamestring.end(), ' '), manglednamestring.end()); // removes all ' '
   
-  cout << histnames.size() << " Single object branches defined -- this one named: " << manglednamestring << endl;
+  cout << histnames.size() << " Single object histo's defined -- this one named: " << manglednamestring << endl;
   
   if (histnames.size()==0 || find(histnames.begin(),histnames.end(),manglednamestring) == histnames.end()) { // if we don't already have it
     histnames.push_back(manglednamestring);

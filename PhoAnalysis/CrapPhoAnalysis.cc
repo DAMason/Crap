@@ -35,6 +35,7 @@
 #include "CrapPhoAnalysis.h"
 #include "../PhoHistClass.h"
 #include "../CounterClass.h"
+#include "../DiObjectPlotClass.h"
 
 
 ////////// MAIN ANALYSIS FUNCTION //////////
@@ -124,9 +125,9 @@ CrapPhoAnalysis::Run()
         event.addOutput(*egTree);
 
 
-      }
+      } // else from checking for bad root files
 
-    }
+    } // if copyEvents
     
     
 
@@ -164,6 +165,21 @@ CrapPhoAnalysis::Run()
     PhoHistClass fakehists(fout,"Fakes");
     PhoHistClass altfakehists(fout,"AltFakes");
     PhoHistClass electronhists(fout,"Electrons");
+    PhoHistClass diphotonleadhists(fout,"DiphotonLead");
+    PhoHistClass diphotontrailhists(fout,"DiphotonTrail");
+    
+    
+    DiObjectPlotClass diphotonhists(fout,"Diphotons"); // initialize di-object histograms...
+    DiObjectPlotClass difakehists(fout,"DiFake");
+    DiObjectPlotClass dielectronhists(fout,"DiElectron");
+    DiObjectPlotClass egammahists(fout,"Egamma");
+    DiObjectPlotClass dialtfakehists(fout,"DiAltFake");
+    DiObjectPlotClass fakegammahists(fout,"FakeGamma");
+    DiObjectPlotClass gammafakehists(fout,"GammaFake");
+    DiObjectPlotClass altfakegammahists(fout,"AltFakeGamma");
+    DiObjectPlotClass gammaaltfakehists(fout,"GammaAltFake");
+    
+    
     
 
     fout->cd();
@@ -430,21 +446,27 @@ CrapPhoAnalysis::Run()
       
       if (goodPhotons.size()>=2 && goodPhotons[0]->momentum.Pt()>40.0) {
         Ngg++;
+        diphotonleadhists.Fill(*goodPhotons[0]);
+        diphotontrailhists.Fill(*goodPhotons[1]);
+        diphotonhists.Fill(goodPhotons[0]->momentum,goodPhotons[1]->momentum);
         IsGGEvent=true;
       }
       
       if (electronPhotons.size()>=2 && electronPhotons[0]->momentum.Pt()>40.0) {
         Nee++;
+        dielectronhists.Fill(electronPhotons[0]->momentum,electronPhotons[1]->momentum);
         IsEEEvent=true;
       }
       
       if (fakealtPhotons.size()>=2 && fakealtPhotons[0]->momentum.Pt()>40.0) {
         NffAlt++;
+        dialtfakehists.Fill(fakealtPhotons[0]->momentum,fakealtPhotons[1]->momentum);
         IsAltFFEvent=true;
       }
       
       if (fakePhotons.size()>=2 && fakePhotons[0]->momentum.Pt()>40.0) {
         Nff++;
+        difakehists.Fill(fakePhotons[0]->momentum,fakePhotons[1]->momentum);
         IsFFEvent=true;
       }
       
@@ -453,6 +475,7 @@ CrapPhoAnalysis::Run()
                                 && !IsEEEvent
                                 && (goodPhotons[0]->momentum.Pt() > 40.0 || electronPhotons[0]->momentum.Pt()>40.0)) {
           Neg++;
+          egammahists.Fill(goodPhotons[0]->momentum,electronPhotons[0]->momentum);
           IsEGEvent=true;
       }
       
@@ -461,10 +484,12 @@ CrapPhoAnalysis::Run()
                                 && !IsFFEvent) {
         if (goodPhotons[0]->momentum.Pt() > 40.0 && (goodPhotons[0]->momentum.Pt() > fakePhotons[0]->momentum.Pt()) ) {
           Ngf++;
+          gammafakehists.Fill(goodPhotons[0]->momentum,fakePhotons[0]->momentum);
           IsGFEvent=true;
         }
         if (fakePhotons[0]->momentum.Pt() > 40.0 && (fakePhotons[0]->momentum.Pt() > goodPhotons[0]->momentum.Pt()) ) {
           Nfg++;
+          fakegammahists.Fill(fakePhotons[0]->momentum,goodPhotons[0]->momentum);
           IsFGEvent=true;
         } 
       }// f+g if
@@ -474,10 +499,12 @@ CrapPhoAnalysis::Run()
                                 && !IsAltFFEvent) {
         if (goodPhotons[0]->momentum.Pt() > 40.0 && (goodPhotons[0]->momentum.Pt() > fakealtPhotons[0]->momentum.Pt()) ) {
           NgfAlt++;
+          altfakegammahists.Fill(fakealtPhotons[0]->momentum,goodPhotons[0]->momentum);
           IsAltGFEvent=true;
         }
         if (fakealtPhotons[0]->momentum.Pt() > 40.0 && (fakealtPhotons[0]->momentum.Pt() > goodPhotons[0]->momentum.Pt()) ) {
           NfAltg++;
+          gammaaltfakehists.Fill(goodPhotons[0]->momentum,fakealtPhotons[0]->momentum);
           IsAltFGEvent=true;
         }
       } // alt f+g if
