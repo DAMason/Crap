@@ -130,10 +130,7 @@ set_target_properties(CrapPhoAnalysis PROPERTIES ${CrapPhoAnalysis_LIBRARY_PROPE
 install(TARGETS CrapPhoAnalysis DESTINATION ${CMAKE_BINARY_DIR}/lib)
 
 
-############### build the executable ######################
-add_executable(CrapPhoAnalysisExe PhoAnalysis/CrapPhoMain.cc)
-target_link_libraries(CrapPhoAnalysisExe ${ROOT_LIBRARIES} CrapPhoAnalysis)
-#set_target_properties(CrapPhoAnalysisExe)
+
 
 
 
@@ -174,6 +171,17 @@ set_target_properties(CrapLLAnalysis PROPERTIES ${CrapLLAnalysis_LIBRARY_PROPERT
 
 ############### install the library ###################
 install(TARGETS CrapLLAnalysis DESTINATION ${CMAKE_BINARY_DIR}/lib)
+
+
+
+
+
+
+
+############### build the executable ######################
+add_executable(CrapExe CrapMain.cc)
+target_link_libraries(CrapExe ${ROOT_LIBRARIES} CrapPhoAnalysis)
+#set_target_properties(CrapExe)
 
 
 
