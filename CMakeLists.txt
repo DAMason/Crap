@@ -142,6 +142,9 @@ install(TARGETS CrapPhoAnalysis DESTINATION ${CMAKE_BINARY_DIR}/lib)
 
 # List of source files
 set(CrapLLAnalysis_SRCS
+PhoHistClass.cpp
+CounterClass.cpp
+DiObjectPlotClass.cpp
 ${SUSYNTUPLE_SRC}/SusyEvent.cc
 LLAnalysis/CrapLLAnalysis.cc
 )
@@ -150,8 +153,22 @@ LLAnalysis/CrapLLAnalysis.cc
 # fill list of header files
 set(CrapLLAnalysis_HEADERS
 ${SUSYNTUPLE_SRC}/SusyEvent.h
-LLAnalysis/CrapLLAnalysis.h
+#LLAnalysis/CrapLLAnalysis.h
 )
+
+# set everything needed for the root dictonary and create the
+# dictionary
+#set(CrapLLAnalysis_LINKDEF LLAnalysis/CrapLLAnalysisLinkDef.h )
+set(CrapLLAnalysis_LINKDEF
+  ${SUSYNTUPLE_SRC}/SusyNtuplizer_LinkDef.h 
+  )
+
+set(CrapLLAnalysis_DICTIONARY ${CMAKE_CURRENT_BINARY_DIR}/CrapLLAnalysisDict.cxx)
+ROOT_GENERATE_DICTIONARY("${CrapLLAnalysis_HEADERS}" "${CrapLLAnalysis_LINKDEF}" "${CrapLLAnalysis_DICTIONARY}" "${INCLUDE_DIRECTORIES}")
+
+# add the dictionary to the list of source files
+SET(CrapLLAnalysis_SRCS ${CrapLLAnalysis_SRCS} ${CrapLLAnalysis_DICTIONARY}) 
+
 
 # Set the library version in the main CMakeLists.txt
 SET(CrapLLAnalysis_MAJOR_VERSION 0)
@@ -180,7 +197,7 @@ install(TARGETS CrapLLAnalysis DESTINATION ${CMAKE_BINARY_DIR}/lib)
 
 ############### build the executable ######################
 add_executable(CrapExe CrapMain.cc)
-target_link_libraries(CrapExe ${ROOT_LIBRARIES} CrapPhoAnalysis)
+target_link_libraries(CrapExe ${ROOT_LIBRARIES} CrapPhoAnalysis CrapLLAnalysis)
 #set_target_properties(CrapExe)
 
 

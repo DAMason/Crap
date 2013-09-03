@@ -1,7 +1,7 @@
 // -*- C++ -*-
 //
 // Package:    SusyNtuplizer
-// Class:      CrapLLAnalysis.cc
+// Class:      CrapPhoAnalysis.cc
 // 
 /*
 
@@ -15,11 +15,12 @@
 */
 //
 // Original Author:  Dongwook Jang
-// $Id: CrapLLAnalysis.cc,v 1.21 2013/05/11 14:14:45 yiiyama Exp $
+// $Id: CrapPhoAnalysis.cc,v 1.21 2013/05/11 14:14:45 yiiyama Exp $
 //
 
 #include <TH1F.h>
 #include <TFile.h>
+#include <TTree.h>
 
 #include <cmath>
 #include <algorithm>
@@ -28,38 +29,25 @@
 #include <map>
 #include <utility>
 
-// Not particularly enamored with this, but since there seem to be several places scattered around
-// where the Jet correction code is enabled, resorting to preprocessor directives to switch this
-// code in or out.  Ultimately controlled by this #define:
-
-//#define CMSSWENVIRONMENT=true
-
-// uncomment above to enable changing the jet corrections (requires a CMSSW environment).
-
-
-#ifdef CMSSWENVIRONMENT // protecting if not in CMSSW environment
-
-#include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h" // to access the JEC scales
-#include "CondFormats/JetMETObjects/interface/JetCorrectionUncertainty.h" // to access the uncertainties
-
-#endif //CMSSWENVIRONMENT
-
 #include "../Crap.h"
-
 #include "../UtilPieces.h"
 
-// Inherit from Crap
-class CrapLLAnalysis: public Crap {
-  /* Main analyzer function to be defined */
-  virtual void Run();
-};
+#include "CrapLLAnalysis.h"
+#include "../PhoHistClass.h"
+#include "../CounterClass.h"
+#include "../DiObjectPlotClass.h"
+
 
 ////////// MAIN ANALYSIS FUNCTION //////////
+
+
+
 void
+
 CrapLLAnalysis::Run()
-{
-  int nCnt[20];
-  for(int i(0); i<20; i++) nCnt[i] = 0;
+{  
+  
+ 
 
   ////////// TEXT OUTPUT //////////
 
@@ -75,32 +63,35 @@ CrapLLAnalysis::Run()
 
 
   
-#ifdef CMSSWENVIRONMENT // protecting if not CMSSW environment -- set above
-  
-  ////////// SWITCH FOR USING USER-PROVIDED JEC //////////
-  bool useCustomJEC(false);
-  
-  FactorizedJetCorrector* jetCorrection(0);
-  JetCorrectionUncertainty* jecUncertainty(0);
-  
-#endif //CMSSWENVIRONMENT
-
   TFile* ggFile(0);
   TFile* ffFile(0);
+  TFile* ffaltFile(0);
+  TFile* eeFile(0);
+  TFile* egFile(0);
   TFile* fout(0);
+  
 
   try{
 
     ////////// INITIALIZE SKIMMED CLONE //////////
     TTree* ggTree(0);
     TTree* ffTree(0);
+    TTree* ffaltTree(0);
+    TTree* eeTree(0);
+    TTree* egTree(0);
+
     if(copyEvents){
 
       if(printLevel > 0) out << "Open file for skim output" << std::endl;
 
       ggFile = TFile::Open("susyEvents_" + outputName + "_gg.root", "RECREATE");
       ffFile = TFile::Open("susyEvents_" + outputName + "_ff.root", "RECREATE");
-      if(!ggFile || ggFile->IsZombie() || !ffFile || ffFile->IsZombie()){
+      ffaltFile = TFile::Open("susyEvents_" + outputName + "_ffalt.root", "RECREATE");
+      eeFile = TFile::Open("susyEvents_" + outputName + "_ee.root", "RECREATE");
+      egFile = TFile::Open("susyEvents_" + outputName + "_eg.root", "RECREATE");
+      
+
+      if(!ggFile || ggFile->IsZombie() || !ffFile || ffFile->IsZombie() || !ffaltFile || ffaltFile->IsZombie() || !eeFile || eeFile->IsZombie() || !egFile || egFile->IsZombie()){
         std::cerr << "Cannot open output file susyEvents_" << outputName << ".root" << std::endl;
         throw std::runtime_error("IOError");
       }
@@ -112,13 +103,34 @@ CrapLLAnalysis::Run()
         ffFile->cd();
         ffTree = new TTree("susyTree", "SUSY Event");
         ffTree->SetAutoSave(10000000);
+        
+        ffaltFile->cd();
+        ffaltTree = new TTree("susyTree", "SUSY Event");
+        ffaltTree->SetAutoSave(10000000);
+        
+        eeFile->cd();
+        eeTree = new TTree("susyTree", "SUSY Event");
+        eeTree->SetAutoSave(10000000);
+        
+        egFile->cd();
+        egTree = new TTree("susyTree", "SUSY Event");
+        egTree->SetAutoSave(10000000);
+
 
         /* Register the output trees to the Event object - the branches will be booked internally */
         event.addOutput(*ggTree);
         event.addOutput(*ffTree);
-      }
+        event.addOutput(*ffaltTree);
+        event.addOutput(*eeTree);
+        event.addOutput(*egTree);
 
-    }
+
+      } // else from checking for bad root files
+
+    } // if copyEvents
+    
+    
+
 
     ////////// INITIALIZE HISTOGRAM OUTPUT //////////
     if(printLevel > 0) out << "Open file for histograms" << std::endl;
@@ -128,31 +140,65 @@ CrapLLAnalysis::Run()
       std::cerr << "Cannot open output file hist_" << outputName << ".root" << std::endl;
       throw std::runtime_error("IOError");
     }
+    
+    
+    
+    // Initialize some marginally intelligible counters...
+    
+    CounterClass NRead("NRead");
+    CounterClass NPresel("NPresel");
+    
+    CounterClass Ngg("Ngg");
+    CounterClass Nff("Nff");
+    CounterClass NffAlt("NffAlt");
+    CounterClass Nee("Nee");
+    CounterClass NeeZ("NeeZ");
+    CounterClass Nfg("Nfg");
+    CounterClass Ngf("Ngf");
+    CounterClass Neg("Neg");
+    CounterClass NfAltg("NfAltg");
+    CounterClass NgfAlt("NgfAlt");
+    
+    
+    
+    PhoHistClass photonhists(fout,"Photons"); // initialize single object histograms...
+    PhoHistClass fakehists(fout,"Fakes");
+    PhoHistClass altfakehists(fout,"AltFakes");
+    PhoHistClass electronhists(fout,"Electrons");
+    PhoHistClass diphotonleadhists(fout,"DiphotonLead");
+    PhoHistClass diphotontrailhists(fout,"DiphotonTrail");
+    
+    
+    DiObjectPlotClass diphotonhists(fout,"Diphotons"); // initialize di-object histograms...
+    DiObjectPlotClass difakehists(fout,"DiFake");
+    DiObjectPlotClass dielectronhists(fout,"DiElectron");
+    DiObjectPlotClass egammahists(fout,"Egamma");
+    DiObjectPlotClass dialtfakehists(fout,"DiAltFake");
+    DiObjectPlotClass fakegammahists(fout,"FakeGamma");
+    DiObjectPlotClass gammafakehists(fout,"GammaFake");
+    DiObjectPlotClass altfakegammahists(fout,"AltFakeGamma");
+    DiObjectPlotClass gammaaltfakehists(fout,"GammaAltFake");
+    
+    
+    
+
+    fout->cd();
 
     if(printLevel > 0) out << "Define histograms" << std::endl;
 
     TH1F* h_met_gg(new TH1F("h_met_gg","#gamma#gamma #slash{E}_{T};#slash{E}_{T} (GeV);Events / GeV", 200, 0., 200.));
     TH1F* h_met_ff(new TH1F("h_met_ff","ff #slash{E}_{T};#slash{E}_{T} (GeV);Events / GeV", 200, 0., 200.));
+    TH1F* h_met_ffAlt(new TH1F("h_met_ffAlt","ffAlt #slash{E}_{T};#slash{E}_{T} (GeV);Events / GeV", 200, 0., 200.));
+    TH1F* h_met_ee(new TH1F("h_met_ee","ee #slash{E}_{T};#slash{E}_{T} (GeV);Events / GeV", 200, 0., 200.));
     TH1F* h_diEMPt_gg(new TH1F("h_diEMPt_gg", "#gamma#gamma diEM P_{T};diEM P_{T} (GeV);Events / GeV", 200, 0., 200.));
     TH1F* h_diEMPt_ff(new TH1F("h_diEMPt_ff", "ff diEM P_{T};diEM P_{T} (GeV);Events / GeV", 200, 0., 200.));
+    TH1F* h_diEMPt_ffAlt(new TH1F("h_diEMPt_ffAlt", "ffAlt diEM P_{T};diEM P_{T} (GeV);Events / GeV", 200, 0., 200.));
+    TH1F* h_diEMPt_ee(new TH1F("h_diEMPt_ee", "ee diEM P_{T};diEM P_{T} (GeV);Events / GeV", 200, 0., 200.));
     TH1F* h_PFDiEMPt_gg(new TH1F("h_PFDiEMPt_gg", "#gamma#gamma PF diEM P_{T};diEM P_{T} (GeV);Events / GeV", 200, 0., 200.));
     TH1F* h_PFDiEMPt_ff(new TH1F("h_PFDiEMPt_ff", "ff PF diEM P_{T};diEM P_{T} (GeV);Events / GeV", 200, 0., 200.));
+    TH1F* h_PFDiEMPt_ffAlt(new TH1F("h_PFDiEMPt_ffAlt", "ffAlt PF diEM P_{T};diEM P_{T} (GeV);Events / GeV", 200, 0., 200.));
+    TH1F* h_PFDiEMPt_ee(new TH1F("h_PFDiEMPt_ee", "ee PF diEM P_{T};diEM P_{T} (GeV);Events / GeV", 200, 0., 200.));
 
-
-#ifdef CMSSWENVIRONMENT // protecting if not CMSSW environment -- set above
-    ////////// INITIALIZE JEC //////////
-    if(useCustomJEC){
-      if(printLevel > 0) out << "Initialize jet energy corrections" << std::endl;
-
-      std::string jecSourcePrefix("../jec/FT_53_V21_AN3_");
-      jetCorrection = new FactorizedJetCorrector("L1FastJet:L2Relative:L3Absolute:L2Relative",
-                                       jecSourcePrefix + "L1FastJet_AK5PF.txt:" +
-                                       jecSourcePrefix + "L2Relative_AK5PF.txt:" +
-                                       jecSourcePrefix + "L3Absolute_AK5PF.txt:" +
-                                       jecSourcePrefix + "L2RelativeL3AbsoluteResidual_AK5PF.txt");
-      jecUncertainty = new JetCorrectionUncertainty(jecSourcePrefix + "Uncertainty_AK5PF.txt");
-    }
-#endif //CMSSWENVIRONMENT
 
     /////////////////////////////////////
     ////////// MAIN EVENT LOOP //////////
@@ -163,6 +209,7 @@ CrapLLAnalysis::Run()
     long iEntry(0);
     while(iEntry != processNEvents && event.getEntry(iEntry++) != 0){
 
+    
       if(printLevel > 1 || iEntry % printInterval == 0)
         out << "Begin processing event " << iEntry - 1 << ". Current: run=" << event.runNumber << ", event=" << event.eventNumber << std::endl;
 
@@ -170,7 +217,7 @@ CrapLLAnalysis::Run()
       if(printLevel > 2) event.Print(out);
 
       /* total number of events */
-      nCnt[0]++;
+      NRead++;
 
       ////////// GOOD LUMI FILTER //////////
       if(printLevel > 1) out << "Apply good lumi list." << std::endl;
@@ -201,64 +248,94 @@ CrapLLAnalysis::Run()
       if(printLevel > 1) out << "Event passes preselection." << std::endl;
 
       /* number of events passing preselection */
-      nCnt[1]++;
+      NPresel++;
 
       ////////// SELECT GOOD AND FAKE PHOTONS //////////
       if(printLevel > 1) out << "Find good barrel photons in the event" << std::endl;
 
       std::vector<susy::Photon const*> goodPhotons;
       std::vector<susy::Photon const*> fakePhotons;
+      std::vector<susy::Photon const*> fakealtPhotons;
+      std::vector<susy::Photon const*> electronPhotons;
+
 
       susy::PhotonCollection const& photons(event.photons["photons"]);
       unsigned nPhoton(photons.size());
       for(unsigned iP(0); iP != nPhoton; ++iP){
         susy::Photon const& photon(photons[iP]);
 
+        // Fiducial and pT requirements
         double pt(photon.momentum.Pt());
         if(pt < 25.) continue;
-
         double absEta(std::abs(photon.momentum.Eta()));
         if(absEta > susy::etaGapBegin) continue; /* use barrel photons only */
 
-        if(photon.nPixelSeeds > 0) continue;
+        // EM requirements
+        if (! EMSelector(photon)) continue;
 
-        if(photon.hadTowOverEm > 0.05) continue;
-
-        double effA[3];
-        photonEffectiveAreas(absEta, effA);
-
-        if(photon.neutralHadronIso - event.rho25 * effA[1] - 0.04 * pt > 3.5) continue;
-
-        if(photon.photonIso - event.rho25 * effA[2] - 0.005 * pt > 1.3) continue;
-
-        //double chIso(photon.chargedHadronIso - event.rho25 * effA[0]);
-        double chIso=rhoCorrectedChIso(photon.chargedHadronIso,photon.momentum.Eta(),event.rho25);
-
-        if(photon.sigmaIetaIeta < 0.012 && chIso < 2.6) goodPhotons.push_back(&photon);
-        else if(photon.sigmaIetaIeta < 0.014 && chIso < 15.) fakePhotons.push_back(&photon);
-      }
+        if (ESelector(photon)) {
+          
+          if (PhoSelector(photon,event.rho25,"loose")) {
+            electronPhotons.push_back(&photon);
+            electronhists.Fill(photon);
+          }
+          
+        } else {
+          if (PhoSelector(photon,event.rho25,"loose")) {
+            goodPhotons.push_back(&photon);
+            photonhists.Fill(photon);
+          }
+          
+          if (FakeSelector(photon,event.rho25,"loose")) {
+            fakePhotons.push_back(&photon);
+            fakehists.Fill(photon);
+          }
+          
+          if (AltFakeSelector(photon,event.rho25,"loose")) {
+            fakealtPhotons.push_back(&photon);
+            altfakehists.Fill(photon);
+          }
+          
+        }
+        
+      
+      } // end loop over photons...
 
       ////////// SORT SELECTED PHOTONS //////////
       std::sort(goodPhotons.begin(), goodPhotons.end(), PtGreater<susy::Photon>);
+      std::sort(electronPhotons.begin(), electronPhotons.end(), PtGreater<susy::Photon>);
       std::sort(fakePhotons.begin(), fakePhotons.end(), PtGreater<susy::Photon>);
-
-      /* leading photon has to have Pt greater than 40 GeV */
-      if(goodPhotons.size() != 0 && goodPhotons[0]->momentum.Pt() < 40.) goodPhotons.clear();
-      if(fakePhotons.size() != 0 && fakePhotons[0]->momentum.Pt() < 40.) fakePhotons.clear();
-
-      if(goodPhotons.size() < 2 && fakePhotons.size() < 2) continue;
+      std::sort(fakealtPhotons.begin(),fakealtPhotons.end(), PtGreater<susy::Photon>);
+      
+      // there's a continue back to the event loop here...
+      if(electronPhotons.size()+goodPhotons.size()+fakePhotons.size() < 2 && electronPhotons.size()+goodPhotons.size()+fakealtPhotons.size() < 2) continue;
+      // i.e. dropping out of loop if we don't have some combination of 2 useful EM objects...
+      
+      
+      // Here's what needed to happen to get to this point:
+      // if(!IsGoodLumi(event.runNumber, event.luminosityBlockNumber))
+      // if(!event.passMetFilters())
+      // if(!PassTriggers())
+      // REQUIRE AT LEAST ONE GOOD VERTEX
+      // 
+      // Need either (electron+photon+fake) or (electron+photon+altFake) has to be 2 or more -- both 25 GeV
+      
+      
+      
       if(goodPhotons.size() >= 2 && fakePhotons.size() >= 2){
         out << "Run " << event.runNumber << " Lumi " << event.luminosityBlockNumber << " Event " << event.eventNumber;
         out << " has >= 2 good photons AND >= 2 fake photons. Check for pathologies!" << std::endl;
       }
+      
+      
+      // Got various flavors of photons -- now get other bits...
+      
 
-      /* number of events with two good photons */
-      if(goodPhotons.size() >= 2) nCnt[2]++;
-      /* number of events with two fake photons */
-      if(fakePhotons.size() >= 2) nCnt[3]++;
+      //////////////////////////////////// Build vector of loose muons
+      
+      vector<susy::Muon const *> looseMuons;
+      
 
-
-      ////////// VETO EVENTS WITH LOOSE MUONS //////////
       if(printLevel > 1) out << "Find loose muons in the event" << std::endl;
 
       susy::MuonCollection const& muons(event.muons["muons"]);
@@ -266,20 +343,18 @@ CrapLLAnalysis::Run()
       unsigned iMuon(0);
       for(; iMuon != nMuon; ++iMuon){
         susy::Muon const& muon(muons[iMuon]);
-
-        if(muon.momentum.Pt() < 10.) continue;
-
-        if(muon.isPFMuon() && (muon.isTrackerMuon() || muon.isGlobalMuon())) break;
+        if (MuonSelector(muon)) looseMuons.push_back(&muon);
       }
-      if(iMuon != nMuon) continue;
 
-      /* number of events with two good photons and no muon */
-      if(goodPhotons.size() >= 2) nCnt[4]++;
-      /* number of events with two fake photons and no muon */
-      if(fakePhotons.size() >= 2) nCnt[5]++;
+      std::sort(looseMuons.begin(),looseMuons.end(),PtGreater<susy::Muon>);
+      
+      
+      
+      //////////////////////////////////// Build vector of loose electrons
 
-
-      ////////// VETO EVENTS WITH LOOSE ELECTRONS //////////
+      vector<susy::Electron const *> looseElectrons;
+      
+       
       if(printLevel > 1) out << "Find loose electrons in the event" << std::endl;
 
       susy::ElectronCollection const& electrons(event.electrons["gsfElectrons"]);
@@ -287,43 +362,17 @@ CrapLLAnalysis::Run()
       unsigned iEle(0);
       for(; iEle != nEle; ++iEle){
         susy::Electron const& electron(electrons[iEle]);
-
-        double pt(electron.momentum.Pt());
-        if(pt < 10.) continue;
-
-        double absEta(std::abs(electron.momentum.Eta()));
-        bool isBarrel(absEta < susy::etaGapBegin);
-        if((!isBarrel && absEta < susy::etaGapEnd) || absEta > susy::etaMax) continue;
-
-        unsigned iP(0);
-        for(; iP != goodPhotons.size(); ++iP)
-          if(isSameObject(electron, *goodPhotons[iP])) break;
-        if(iP != goodPhotons.size()) continue;
-
-        if(std::abs(electron.deltaEtaSuperClusterTrackAtVtx) > (isBarrel ? 0.007 : 0.01)) continue;
-        if(std::abs(electron.deltaPhiSuperClusterTrackAtVtx) > (isBarrel ? 0.8 : 0.7)) continue;
-        if(electron.sigmaIetaIeta > (isBarrel ? 0.01 : 0.03)) continue;
-        if(isBarrel && electron.hcalOverEcalBc > 0.15) continue;
-
-        if(electron.gsfTrack == 0) continue;
-        if(std::abs(electron.gsfTrack->dxy(primVtx.position)) > 0.04) continue;
-        if(std::abs(electron.gsfTrack->dz(primVtx.position)) > 0.2) continue;
-
-        double effA;
-        electronEffectiveAreas(absEta, effA);
-        if((electron.chargedHadronIso + electron.neutralHadronIso + electron.photonIso - event.rho25 * effA) / pt > 0.15) continue;
-
-        /* this is a loose electron (working point "Veto") */
-        break;
+        if (ElectronSelector(electron,primVtx,event.rho25)) looseElectrons.push_back(&electron);
       }
-      if(iEle != nEle) continue;
+      
+      std::sort(looseElectrons.begin(),looseElectrons.end(),PtGreater<susy::Electron>);
 
-      /* number of events with two good photons and no lepton */
-      if(goodPhotons.size() >= 2) nCnt[6]++;
-      /* number of events with two fake photons and no lepton */
-      if(fakePhotons.size() >= 2) nCnt[7]++;
 
-      ////////// SELECT JETS //////////
+      ///////////////////////////////////// Build vector of pf jets
+      
+      
+      std::vector<susy::PFJet const*> keptJets;
+      
       if(printLevel > 1) out << "Find good PFJets in the event" << std::endl;
 
       susy::PFJetCollection const& pfJets(event.pfJets["ak5"]);
@@ -332,93 +381,30 @@ CrapLLAnalysis::Run()
       for(unsigned iJ(0); iJ != nJets; ++iJ){
         susy::PFJet const& jet(pfJets[iJ]);
 
-        double eta(jet.momentum.Eta());
-        if(std::abs(eta) > 2.6) continue;
+        if (PFJetSelector(jet)) {
+          
+          // need still to clean photons out of this...
+          
+          keptJets.push_back(&jet);
+          ++nGoodJets;
 
-        if(jet.nConstituents < 2) continue;
-        if(jet.chargedMultiplicity == 0) continue;
-
-        double energy(jet.momentum.E());
-
-        if(jet.neutralHadronEnergy / energy > 0.99) continue;
-        if(jet.neutralEmEnergy / energy > 0.99) continue;
-        if(jet.chargedHadronEnergy / energy < 1.e-6) continue;
-        if(jet.chargedEmEnergy / energy > 0.99) continue;
-
-        unsigned iP(0);
-        for(; iP != goodPhotons.size(); ++iP)
-          if(isSameObject(jet, *goodPhotons[iP])) break;
-        if(iP != goodPhotons.size()) continue;
-
-
-        float jecScale;
-        float jecScaleUncertainty;
-        
-#ifdef CMSSWENVIRONMENT // protecting if not CMSSW environment -- set above
-        
-        double pt(jet.momentum.Pt());
-
-        
-        if(useCustomJEC){
-          jetCorrection->setJetEta(eta);
-          jetCorrection->setJetPt(pt);
-          jetCorrection->setJetA(jet.jetArea);
-          jetCorrection->setRho(event.rho);
-
-          jecScale = jetCorrection->getCorrection();
-
-          jecUncertainty->setJetEta(eta);
-          jecUncertainty->setJetPt(pt);
-
-          try{
-            jecScaleUncertainty = jecUncertainty->getUncertainty(true);
           }
-          catch(std::exception& e){
-            std::cerr << "Cannot get uncertainty for jet Pt = " << pt << " Eta = " << eta << ". Setting to -1." << std::endl;
-            jecScaleUncertainty = -1.;
-          }
-        }
-        else{
-        
-#endif // CMSSWENVIRONMENT        
 
-          // "Residual" correction for data is already included in the ntuplizer (see line 2279 of SusyNtuplizer.cc)
-          jecScale = jet.jecScaleFactors.find("L1FastL2L3")->second;
-
-          jecScaleUncertainty = jet.jecUncertainty;
-
-#ifdef CMSSWENVIRONMENT // protecting if not CMSSW environment -- set above (other half of circumventing the if() above)
-
-        }
-
-#endif // CMSSWENVIRONMENT   (yes we really just #ifdef'ed a closing bracket)     
-
-        if(jecScaleUncertainty > 0.2) continue;
-
-        TLorentzVector corrP4(jecScale * jet.momentum);
-
-        if(corrP4.Pt() < 30.) continue;
-
-        ++nGoodJets;
       }
-
-      if(nGoodJets > 0){
-        /* number of events with two good photons, no lepton, and >=1 good jets */
-        if(goodPhotons.size() >= 2) nCnt[8]++;
-        /* number of events with two fake photons, no lepton, and >=1 good jets */
-        if(fakePhotons.size() >= 2) nCnt[9]++;
-      }
+      
+      
+      std::sort(keptJets.begin(),keptJets.end(),PtGreater<susy::PFJet>);
+      
+      
 
       ////////// MET //////////
+
+      
       TVector2 const& metV(event.metMap["pfType01CorrectedMet"].mEt);
 
-      if(nGoodJets > 0 && metV.Mod() > 50.){
-        /* number of events with two good photons, no lepton, >=1 good jets, and MET > 50 GeV */
-        if(goodPhotons.size() >= 2) nCnt[10]++;
-        /* number of events with two fake photons, no lepton, >=1 good jets, and MET > 50 GeV */
-        if(fakePhotons.size() >= 2) nCnt[11]++;
-      }
 
+      
+      
       ////////// PF PARTICLES (DEMONSTRATION OF THE WORKAROUND FOR THE BUG IN TAG cms538v0 / cms538v1) ///////////
       std::map<std::pair<int, float>, susy::PFParticle const*> uniquePF;
 
@@ -434,39 +420,109 @@ CrapLLAnalysis::Run()
 
       nPF = pfParticles.size();
 
+      
+      
+      // Now we have required there be two 25 GeV EM objects in some combination of electron+photon+fake or electron+photon+altfake
+      // We have filled vectors of the various photon flavors, muons, electrons and jets as well.
+      
+      ////////// Event Classification //////////
+      
+      bool IsGGEvent=false;
+      bool IsFFEvent=false;
+      bool IsEEEvent=false;
+      bool IsEGEvent=false;
+      bool IsFGEvent=false;
+      bool IsGFEvent=false;
+      
+      bool IsAltFFEvent=false;
+      bool IsAltGFEvent=false;
+      bool IsAltFGEvent=false;
+      
+      
+      if (goodPhotons.size()>=2 && goodPhotons[0]->momentum.Pt()>40.0) {
+        Ngg++;
+        diphotonleadhists.Fill(*goodPhotons[0]);
+        diphotontrailhists.Fill(*goodPhotons[1]);
+        diphotonhists.Fill(goodPhotons[0]->momentum,goodPhotons[1]->momentum);
+        IsGGEvent=true;
+      }
+      
+      if (electronPhotons.size()>=2 && electronPhotons[0]->momentum.Pt()>40.0) {
+        Nee++;
+        dielectronhists.Fill(electronPhotons[0]->momentum,electronPhotons[1]->momentum);
+        IsEEEvent=true;
+      }
+      
+      if (fakealtPhotons.size()>=2 && fakealtPhotons[0]->momentum.Pt()>40.0) {
+        NffAlt++;
+        dialtfakehists.Fill(fakealtPhotons[0]->momentum,fakealtPhotons[1]->momentum);
+        IsAltFFEvent=true;
+      }
+      
+      if (fakePhotons.size()>=2 && fakePhotons[0]->momentum.Pt()>40.0) {
+        Nff++;
+        difakehists.Fill(fakePhotons[0]->momentum,fakePhotons[1]->momentum);
+        IsFFEvent=true;
+      }
+      
+      if (goodPhotons.size()>=1 && electronPhotons.size()>=1
+                                && !IsGGEvent
+                                && !IsEEEvent
+                                && (goodPhotons[0]->momentum.Pt() > 40.0 || electronPhotons[0]->momentum.Pt()>40.0)) {
+          Neg++;
+          egammahists.Fill(goodPhotons[0]->momentum,electronPhotons[0]->momentum);
+          IsEGEvent=true;
+      }
+      
+      if (goodPhotons.size()>=1 && fakePhotons.size()>=1
+                                && !IsGGEvent
+                                && !IsFFEvent) {
+        if (goodPhotons[0]->momentum.Pt() > 40.0 && (goodPhotons[0]->momentum.Pt() > fakePhotons[0]->momentum.Pt()) ) {
+          Ngf++;
+          gammafakehists.Fill(goodPhotons[0]->momentum,fakePhotons[0]->momentum);
+          IsGFEvent=true;
+        }
+        if (fakePhotons[0]->momentum.Pt() > 40.0 && (fakePhotons[0]->momentum.Pt() > goodPhotons[0]->momentum.Pt()) ) {
+          Nfg++;
+          fakegammahists.Fill(fakePhotons[0]->momentum,goodPhotons[0]->momentum);
+          IsFGEvent=true;
+        } 
+      }// f+g if
+      
+      if (goodPhotons.size()>=1 && fakealtPhotons.size()>=1
+                                && !IsGGEvent
+                                && !IsAltFFEvent) {
+        if (goodPhotons[0]->momentum.Pt() > 40.0 && (goodPhotons[0]->momentum.Pt() > fakealtPhotons[0]->momentum.Pt()) ) {
+          NgfAlt++;
+          altfakegammahists.Fill(fakealtPhotons[0]->momentum,goodPhotons[0]->momentum);
+          IsAltGFEvent=true;
+        }
+        if (fakealtPhotons[0]->momentum.Pt() > 40.0 && (fakealtPhotons[0]->momentum.Pt() > goodPhotons[0]->momentum.Pt()) ) {
+          NfAltg++;
+          gammaaltfakehists.Fill(goodPhotons[0]->momentum,fakealtPhotons[0]->momentum);
+          IsAltFGEvent=true;
+        }
+      } // alt f+g if
+     
+      
       ////////// FILL HISTOGRAMS //////////
 
-      if(nGoodJets > 0){
-        if(goodPhotons.size() >= 2){
-          h_met_gg->Fill(metV.Mod());
-          TLorentzVector diEMP(goodPhotons[0]->momentum);
-          diEMP += goodPhotons[1]->momentum;
-          h_diEMPt_gg->Fill(diEMP.Pt());
+      
+      
+      
+      
+            
+      
+      
 
-          TLorentzVector PFDiEMP;
-          for(unsigned iPF(0); iPF != nPF; ++iPF)
-            if(pfParticles[iPF]->momentum.DeltaR(goodPhotons[0]->momentum) < 0.3 || pfParticles[iPF]->momentum.DeltaR(goodPhotons[1]->momentum) < 0.3)
-              PFDiEMP += pfParticles[iPF]->momentum;
-          h_PFDiEMPt_gg->Fill(PFDiEMP.Pt());
-        }
-        if(fakePhotons.size() >= 2){
-          h_met_ff->Fill(metV.Mod());
-          TLorentzVector diEMP(fakePhotons[0]->momentum);
-          diEMP += fakePhotons[1]->momentum;
-          h_diEMPt_ff->Fill(diEMP.Pt());
-
-          TLorentzVector PFDiEMP;
-          for(unsigned iPF(0); iPF != nPF; ++iPF)
-            if(pfParticles[iPF]->momentum.DeltaR(fakePhotons[0]->momentum) < 0.3 || pfParticles[iPF]->momentum.DeltaR(fakePhotons[1]->momentum) < 0.3)
-              PFDiEMP += pfParticles[iPF]->momentum;
-          h_PFDiEMPt_ff->Fill(PFDiEMP.Pt());
-        }
-      }
 
       ////////// FILL SKIMS //////////
       if(copyEvents){
-        if(goodPhotons.size() >= 2) ggTree->Fill();
-        if(fakePhotons.size() >= 2) ffTree->Fill();
+        if(IsFFEvent) ffTree->Fill();
+        if(IsGGEvent) ggTree->Fill();
+        if(IsAltFFEvent) ffaltTree->Fill();
+        if(IsEEEvent) eeTree->Fill();
+        if(IsEGEvent) egTree->Fill();
       }
 
     }
@@ -474,19 +530,19 @@ CrapLLAnalysis::Run()
     ////////// END OF EVENT LOOP //////////
 
     out << " ----------------- Job Summary ----------------- " << std::endl;
-    out << " Total events                                                 : " << nCnt[0] << std::endl;
-    if(nCnt[0] > 0){
-      out << " passed preselection                                          : " << nCnt[1] << " (" << nCnt[1]/float(nCnt[0]) << ")" << std::endl;
-      out << " goodPhotons >= 2                                             : " << nCnt[2] << " (" << nCnt[2]/float(nCnt[1]) << ")" << std::endl;
-      out << " fakePhotons >= 2                                             : " << nCnt[3] << " (" << nCnt[3]/float(nCnt[1]) << ")" << std::endl;
-      out << " goodPhotons >= 2 && 0 muon                                   : " << nCnt[4] << " (" << nCnt[4]/float(nCnt[1]) << ")" << std::endl;
-      out << " fakePhotons >= 2 && 0 muon                                   : " << nCnt[5] << " (" << nCnt[5]/float(nCnt[1]) << ")" << std::endl;
-      out << " goodPhotons >= 2 && 0 lepton                                 : " << nCnt[6] << " (" << nCnt[6]/float(nCnt[1]) << ")" << std::endl;
-      out << " fakePhotons >= 2 && 0 lepton                                 : " << nCnt[7] << " (" << nCnt[7]/float(nCnt[1]) << ")" << std::endl;
-      out << " goodPhotons >= 2 && 0 lepton && >= 1 good jet                : " << nCnt[8] << " (" << nCnt[8]/float(nCnt[1]) << ")" << std::endl;
-      out << " goodPhotons >= 2 && 0 lepton && >= 1 good jet                : " << nCnt[9] << " (" << nCnt[9]/float(nCnt[1]) << ")" << std::endl;
-      out << " goodPhotons >= 2 && 0 lepton && >= 1 good jet && MET > 50 GeV: " << nCnt[10] << " (" << nCnt[10]/float(nCnt[1]) << ")" << std::endl;
-      out << " goodPhotons >= 2 && 0 lepton && >= 1 good jet && MET > 50 GeV: " << nCnt[11] << " (" << nCnt[11]/float(nCnt[1]) << ")" << std::endl;
+    out << " Total events                                                 : " << NRead.Val() << std::endl;
+    if(NRead.Val() > 0){
+      out << " passed preselection                                          : " << NPresel.Val() << " (" << NPresel.Val()/float(NRead.Val()) << ")" << std::endl;
+      out << " goodPhotons >= 2                                             : " << Ngg.Val()     << " (" << Ngg.Val()/float(NPresel.Val()) << ")" << std::endl;
+      out << " fakePhotons >= 2                                             : " << Nff.Val()     << " (" << Nff.Val()/float(NPresel.Val()) << ")" << std::endl;
+      out << " fake-gamma                                                   : " << Nfg.Val()     << " (" << Nfg.Val()/float(NPresel.Val()) << ")" << std::endl;
+      out << " gamma-fake                                                   : " << Ngf.Val()     << " (" << Ngf.Val()/float(NPresel.Val()) << ")" << std::endl;
+      out << " alternate fakePhotons >= 2                                   : " << NffAlt.Val()  << " (" << NffAlt.Val()/float(NPresel.Val()) << ")" << std::endl;
+      out << " alternate fake-gamma                                         : " << NfAltg.Val()  << " (" << NfAltg.Val()/float(NPresel.Val()) << ")" << std::endl;
+      out << " gamma-alternate fake                                         : " << NgfAlt.Val()  << " (" << NgfAlt.Val()/float(NPresel.Val()) << ")" << std::endl;
+      out << " elecPhotons >= 2                                             : " << Nee.Val()     << " (" << Nee.Val()/float(NPresel.Val()) << ")" << std::endl;
+      out << " elecPhotons in Z window >= 2                                 : " << NeeZ.Val()    << " (" << NeeZ.Val()/float(NPresel.Val()) << ")" << std::endl;
+      out << " e-gamma (or gamma-e)                                         : " << Neg.Val()     << " (" << Neg.Val()/float(NPresel.Val()) << ")" << std::endl;
     }
 
     if(printLevel > 0) out << "Save outputs" << std::endl;
@@ -499,12 +555,27 @@ CrapLLAnalysis::Run()
     if(copyEvents){
       event.releaseTree(*ggTree);
       event.releaseTree(*ffTree);
+      event.releaseTree(*ffaltTree);
+      event.releaseTree(*eeTree);
+      event.releaseTree(*egTree);
+
+      
 
       ggFile->cd();
       ggFile->Write();
 
       ffFile->cd();
       ffFile->Write();
+      
+      ffaltFile->cd();
+      ffaltFile->Write();
+      
+      eeFile->cd();
+      eeFile->Write();
+      
+      egFile->cd();
+      egFile->Write();
+      
     }
   }
   catch(std::exception& e){
@@ -513,16 +584,15 @@ CrapLLAnalysis::Run()
     event.releaseTrees();
   }
 
-#ifdef CMSSWENVIRONMENT // protecting if not CMSSW environment -- set above
-
-  delete jetCorrection;
-  delete jecUncertainty;
-
-#endif // CMSSWENVIRONMENT        
 
 
   delete ggFile;
   delete ffFile;
+  delete ffaltFile;
+  delete eeFile;
+  delete egFile;
+
+
   delete fout;
 }
 

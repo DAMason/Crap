@@ -5,6 +5,7 @@
 
 #include "Crap.h"
 #include "PhoAnalysis/CrapPhoAnalysis.h"
+#include "LLAnalysis/CrapLLAnalysis.h"
 
 using namespace std;
 
