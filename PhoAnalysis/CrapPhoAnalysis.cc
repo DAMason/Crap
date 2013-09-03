@@ -394,11 +394,6 @@ CrapPhoAnalysis::Run()
       
       
       std::sort(keptJets.begin(),keptJets.end(),PtGreater<susy::PFJet>);
-
-      
-
-      
-      
       
       
 

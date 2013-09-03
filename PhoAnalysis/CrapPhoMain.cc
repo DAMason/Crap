@@ -19,6 +19,7 @@ int main(int argc, char* argv[]) {
   string HLTList="";
   string LogFile="cout";
   string InputFileFile="";  // should be initialized empty
+  string InputFileList="";  // also should be initialized empty
   
   vector<string> InputFiles;
 
@@ -30,6 +31,9 @@ int main(int argc, char* argv[]) {
   //for (int iarg=1;iarg<argc;iarg++) {
   int iarg=1;
   while (iarg<argc) {
+    cout << "Arg: " << iarg << "  " << argv[iarg] << endl;
+
+    
     if (argv[iarg][0] == '-') {
     
       string argvRemnants=argv[iarg];
@@ -56,9 +60,21 @@ int main(int argc, char* argv[]) {
         if (++iarg <=argc) { // has a second argument
           cout << "-inputfilefile " << argv[iarg] << endl;
           InputFileFile=argv[iarg];
-          cout << "Reading list of input files to " << InputFileFile << endl;
+          cout << "Reading list of input files from " << InputFileFile << endl;
         } 
       }
+      
+     else if (argvRemnants == "inputfilelist" ) {
+       cout << "-inputfilelist ";
+       while (++iarg <=argc && argv[iarg][0] != '-') { // has more arguments and isn't at the end
+         
+         cout << argv[iarg] << " ";
+         InputFiles.push_back(argv[iarg]);
+         //cout << "Reading these files: " << InputFileFile << endl;
+       }
+       cout << endl;
+       if (iarg < argc) iarg--;  // Backing up since we probably just hit another argument...
+     }
       
      else if (argvRemnants == "logfile" ) {
         if (++iarg <=argc) { // has a second argument
@@ -111,23 +127,24 @@ int main(int argc, char* argv[]) {
       cout << "                -printlevel    <int # 0-2> " << endl;
       cout << "                -addHLTlist    <file> " << endl;
       cout << "                -logfile       <file> " << endl;
-      cout << "                -inputfiles    <file> " << endl;    
+      cout << "                -inputfiles    <file> " << endl;
+      cout << "                -inputfilelist <file> <file> <file> ..." << endl;
       cout << "                -includejson   <file>  (can be used repeatedly)" << endl;            
     }  
     
-    cout << "Arg: " << iarg << "  " << argv[iarg] << endl;
     iarg++;
-  } // end if argc
+  } // end while argc
   
   
   TChain chain("susyTree");
   string fileline;
 
+  int filecounter(0);
+  
   ifstream infilelist;
   infilelist.open(InputFileFile.c_str());
   if (!infilelist.is_open()) {
-    cerr << "Not able to find input file list: " << InputFileFile << endl;
-    cerr << "Probably not going to do a whole lot here..." << endl;
+    cerr << "-inputfilelist specified, but not found!  Hoping there was something in the command line then..." << endl;
   } else {
     while (!infilelist.eof()) {
       getline(infilelist,fileline);
@@ -135,9 +152,27 @@ int main(int argc, char* argv[]) {
         cout << "File input: " << fileline.c_str() << endl;
         //InputFiles.push_back(fileline);
         chain.Add(fileline.c_str());
+        filecounter++;
       }
     }
     infilelist.close();
+  }
+  
+  if (InputFiles.size()>0) {
+    for (int ifile=0;ifile<InputFiles.size();++ifile) {
+      if (InputFiles[ifile].find("root")!=1) {
+        cout << "CL File input: " << InputFiles[ifile].c_str() << endl;
+        chain.Add(InputFiles[ifile].c_str());
+        filecounter++;
+      }
+    }
+    
+  }
+  
+  if (filecounter==0) {
+    //cerr << "Not able to find input file list: " << InputFileFile << endl;
+    cerr << "We ended up not adding any files to the chain..." << endl;
+    cerr << "Probably not going to do a whole lot here..." << endl;
   }
   
 
