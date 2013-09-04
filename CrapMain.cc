@@ -139,7 +139,7 @@ int main(int argc, char* argv[]) {
       cout << "                -printlevel    <int # 0-2> " << endl;
       cout << "                -addHLTlist    <file> " << endl;
       cout << "                -logfile       <file> " << endl;
-      cout << "                -inputfiles    <file> " << endl;
+      cout << "                -inputfilefile <file> " << endl;
       cout << "                -inputfilelist <file> <file> <file> ..." << endl;
       cout << "                -includejson   <file>  (can be used repeatedly)" << endl;            
     }  
