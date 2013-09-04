@@ -22,6 +22,8 @@ int main(int argc, char* argv[]) {
   string InputFileFile="";  // should be initialized empty
   string InputFileList="";  // also should be initialized empty
   
+  string Analysis="Pho"; // Which analysis we're doing -- at the moment "Pho" or "LL"  "Pho" is default...
+  
   vector<string> InputFiles;
 
 
@@ -55,6 +57,14 @@ int main(int argc, char* argv[]) {
           LogFile=argv[iarg];
           cout << "Setting Log File to " << LogFile << endl;
         } 
+      }
+      
+      else if (argvRemnants == "analysis" ) {
+        if (++iarg <=argc) { // has a second argument
+          cout << "-analysis " << argv[iarg] << endl;
+          Analysis=argv[iarg];
+          cout << "ANALYSIS SELECTED: " << Analysis << endl;
+        }
       }
       
      else if (argvRemnants == "inputfilefile" ) {
@@ -122,6 +132,7 @@ int main(int argc, char* argv[]) {
       cout << "Something is wonky with the command line args..." << endl;
       cout << "Usage: " << endl;
       cout << "CrapExe  " << endl;
+      cout << "                -analysis      Pho||LL" << endl;
       cout << "                -outputname    <output file base> " << endl;
       cout << "                -copyevents    (no argument -- bool)" << endl;
       cout << "                -printinterval <int # events>" << endl;
@@ -182,19 +193,43 @@ int main(int argc, char* argv[]) {
 
   //TString outputName="analysis";
   
-  CrapPhoAnalysis sea(chain);
-
-  sea.SetOutput(OutputBase);
-  sea.SetLogFile(LogFile); // set to a full path to a file to output log to a file
-  sea.SetPrintInterval(PrintInterval);
-  sea.SetPrintLevel(PrintLevel);
-  // we want to get rid of this one I think...  Why is it here?
-  sea.AddHltName("HLT_Photon36_CaloId10_Iso50_Photon22_CaloId10_Iso50");
-  sea.CopyEvents(CopyEvents);
-  sea.SetProcessNEvents(ProcessNEvents);
   
-  sea.Run();
+  // At this point we have done all the general stuff -- now analysis specific bits...
+  
+  
+  cout << "Proceeding to run selected analysis: \"" << Analysis << "\"" << endl;
+  
+  if (Analysis=="Pho") {
+    
+    CrapPhoAnalysis sea(chain);
 
-
-
+    sea.SetOutput(OutputBase);
+    sea.SetLogFile(LogFile); // set to a full path to a file to output log to a file
+    sea.SetPrintInterval(PrintInterval);
+    sea.SetPrintLevel(PrintLevel);
+    // we want to get rid of this one I think...  Why is it here?
+    sea.AddHltName("HLT_Photon36_CaloId10_Iso50_Photon22_CaloId10_Iso50");
+    sea.CopyEvents(CopyEvents);
+    sea.SetProcessNEvents(ProcessNEvents);
+  
+    sea.Run();
+ 
+  } else if (Analysis == "LL") {
+ 
+    CrapLLAnalysis sea(chain);
+    
+    sea.SetOutput(OutputBase);
+    sea.SetLogFile(LogFile); // set to a full path to a file to output log to a file
+    sea.SetPrintInterval(PrintInterval);
+    sea.SetPrintLevel(PrintLevel);
+    // we want to get rid of this one I think...  Why is it here?
+    sea.AddHltName("HLT_Photon36_CaloId10_Iso50_Photon22_CaloId10_Iso50");
+    sea.CopyEvents(CopyEvents);
+    sea.SetProcessNEvents(ProcessNEvents);
+    
+    sea.Run();
+    
+  } else { // something else
+    cout << "You picked a bogus analysis option: \"" << Analysis << "\"" << endl;
+  }
 }
