@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
       cout << argvRemnants << endl;
        
       if (argvRemnants == "printinterval" ) {
-        if (++iarg <=argc) { // has a second argument
+        if (++iarg <argc) { // has a second argument
           cout << "-printinterval " << argv[iarg] << endl;
           PrintInterval=atoi(argv[iarg]);
           cout << "Setting Print Interval to " << PrintInterval << endl;
@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
       }
       
       else if (argvRemnants == "printlevel" ) {
-        if (++iarg <=argc) { // has a second argument
+        if (++iarg <argc) { // has a second argument
           cout << "-logfile " << argv[iarg] << endl;
           LogFile=argv[iarg];
           cout << "Setting Log File to " << LogFile << endl;
@@ -60,7 +60,7 @@ int main(int argc, char* argv[]) {
       }
       
       else if (argvRemnants == "analysis" ) {
-        if (++iarg <=argc) { // has a second argument
+        if (++iarg <argc) { // has a second argument
           cout << "-analysis " << argv[iarg] << endl;
           Analysis=argv[iarg];
           cout << "ANALYSIS SELECTED: " << Analysis << endl;
@@ -68,7 +68,7 @@ int main(int argc, char* argv[]) {
       }
       
      else if (argvRemnants == "inputfilefile" ) {
-        if (++iarg <=argc) { // has a second argument
+        if (++iarg <argc) { // has a second argument
           cout << "-inputfilefile " << argv[iarg] << endl;
           InputFileFile=argv[iarg];
           cout << "Reading list of input files from " << InputFileFile << endl;
@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
       
      else if (argvRemnants == "inputfilelist" ) {
        cout << "-inputfilelist ";
-       while (++iarg <=argc && argv[iarg][0] != '-') { // has more arguments and isn't at the end
+       while (++iarg <argc && argv[iarg][0] != '-') { // has more arguments and isn't at the end
          
          cout << argv[iarg] << " ";
          InputFiles.push_back(argv[iarg]);
@@ -88,7 +88,7 @@ int main(int argc, char* argv[]) {
      }
       
      else if (argvRemnants == "logfile" ) {
-        if (++iarg <=argc) { // has a second argument
+        if (++iarg <argc) { // has a second argument
           cout << "-printlevel " << argv[iarg] << endl;
           PrintLevel=atoi(argv[iarg]);
           cout << "Setting Print Level to " << PrintLevel << endl;
@@ -96,7 +96,7 @@ int main(int argc, char* argv[]) {
       }
       
      else if (argvRemnants == "processevents" ) {
-        if (++iarg <=argc) { // has a second argument
+        if (++iarg <argc) { // has a second argument
           cout << "-processevents " << argv[iarg] << endl;
           ProcessNEvents=atoi(argv[iarg]);
           cout << "Processing " << ProcessNEvents << " events..." << endl;
@@ -104,7 +104,7 @@ int main(int argc, char* argv[]) {
       }
       
       else if (argvRemnants == "outputname" ) {
-        if (++iarg <=argc) { // has a second argument
+        if (++iarg <argc) { // has a second argument
           cout << "-outputname " << argv[iarg] << endl;
           OutputBase=argv[iarg];
           cout << "Output base set to " << OutputBase << endl;
@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
       }
       
       else if (argvRemnants == "logfile" ) {
-        if (++iarg <=argc) { // has a second argument
+        if (++iarg <argc) { // has a second argument
           cout << "-logfile " << argv[iarg] << endl;
           LogFile=argv[iarg];
           cout << "LogFile set to " << LogFile << endl;
@@ -148,26 +148,31 @@ int main(int argc, char* argv[]) {
   } // end while argc
   
   
+  
+  
   TChain chain("susyTree");
   string fileline;
 
   int filecounter(0);
   
   ifstream infilelist;
-  infilelist.open(InputFileFile.c_str());
-  if (!infilelist.is_open()) {
-    cerr << "-inputfilelist specified, but not found!  Hoping there was something in the command line then..." << endl;
-  } else {
-    while (!infilelist.eof()) {
-      getline(infilelist,fileline);
-      if (fileline.find("root")!=-1) {
-        cout << "File input: " << fileline.c_str() << endl;
-        //InputFiles.push_back(fileline);
-        chain.Add(fileline.c_str());
-        filecounter++;
+  if (InputFileFile!="") {
+    
+    infilelist.open(InputFileFile.c_str());
+    if (!infilelist.is_open()) {
+      cerr << "-inputfilelist specified, but not found!  Hoping there was something in the command line then..." << endl;
+    } else {
+      while (!infilelist.eof()) {
+        getline(infilelist,fileline);
+        if (fileline.find("root")!=-1) {
+          cout << "File input: " << fileline.c_str() << endl;
+          //InputFiles.push_back(fileline);
+          chain.Add(fileline.c_str());
+          filecounter++;
+        }
       }
+      infilelist.close();
     }
-    infilelist.close();
   }
   
   if (InputFiles.size()>0) {
