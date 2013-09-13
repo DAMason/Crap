@@ -8,6 +8,7 @@
 #--------------------------------------------------
 #TARGET  = CrapEXE
 
+ROOTSYS  =/cern/root
 
 SUSYPHODIR	= ../SUSYPhotonAnalysis/SusyNtuplizer/src
 SUSYEVENT	= $(SUSYPHODIR)/SusyEvent.cc
@@ -15,8 +16,8 @@ SUSYEVENT	= $(SUSYPHODIR)/SusyEvent.cc
 DICTS		= Event_dict
 
 
-GLOBALINC	= -I. -I$(shell root-config --incdir) -I $(SUSYPHODIR)
-GLOBALLIBS	= $(shell root-config --libs) -Llib
+GLOBALINC	= -I. -I$(shell $(ROOTSYS)/bin/root-config --incdir) -I $(SUSYPHODIR)
+GLOBALLIBS	= $(shell $(ROOTSYS)/bin/root-config --libs) -Llib
 
 CRAPSRCS	= CounterClass.cpp DiObjectPlotClass.cpp PhoHistClass.cpp
 PHOSRCS		= PhoAnalysis/CrapPhoAnalysis.cc $(CRAPSRCS) $(SUSYEVENT)
@@ -32,7 +33,7 @@ MAINSRC		= CrapMain.cc
 #---------------------------------------------------
 # compiler dependent flags
 #---------------------------------------------------
-ARCH         := $(shell root-config --arch)
+ARCH         := $(shell $(ROOTSYS)/bin/root-config --arch)
 #
 ifeq ($(ARCH),linuxx8664gcc)
 # Linux with egcs, gcc 2.9x, gcc 3.x (>= RedHat 5.2)
@@ -115,6 +116,10 @@ Debug:
 CrapExe: libPhoAnalysis.so libLLAnalysis.so CrapMain.o
 	@@echo "Making CrapExe"
 	@@$(CXX) $(CXXFLAGS) -o CrapExe $(GLOBALLIBS) -l CrapPhoAnalysis -l CrapLLAnalysis CrapMain.o
+  
+CrapLLAnalysis: libLLAnalysis.so
+
+CrapPhoAnalysis: libPhoAnalysis.so
 
 libPhoAnalysis.so: $(PHOOBJ) $(DICTS)
 	@@echo "Making libPhoAnalysis.so..."
@@ -135,7 +140,7 @@ libLLAnalysis.so: $(LLOBJ) $(DICTS)
 	
 $(DICTS):
 	@@echo "Generating Dictionary..."
-	@@rootcint -f $(DICTS).cc -c $(SUSYPHODIR)/SusyEvent.h $(SUSYPHODIR)/SusyNtuplizer_LinkDef.h
+	@@$(ROOTSYS)/bin/rootcint -f $(DICTS).cc -c $(SUSYPHODIR)/SusyEvent.h $(SUSYPHODIR)/SusyNtuplizer_LinkDef.h
 		
 clean:
 	@@/bin/rm -f $(TARGET) $(DICTS).* *_cc.d *_cc.so *~
