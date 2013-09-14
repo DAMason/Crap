@@ -110,8 +110,9 @@ endif
 # Rules
 #-------------------------------------------
 
-Debug: 	
-	@@echo $(GLOBALLIBS) 
+
+
+all:  CrapExe
 
 CrapExe: libPhoAnalysis.so libLLAnalysis.so CrapMain.o
 	@@echo "Making CrapExe"
@@ -141,6 +142,10 @@ libLLAnalysis.so: $(LLOBJ) $(DICTS)
 $(DICTS):
 	@@echo "Generating Dictionary..."
 	@@$(ROOTSYS)/bin/rootcint -f $(DICTS).cc -c $(SUSYPHODIR)/SusyEvent.h $(SUSYPHODIR)/SusyNtuplizer_LinkDef.h
-		
+
+
+Debug: 	
+	@@echo $(GLOBALLIBS) 
+
 clean:
 	@@/bin/rm -f $(TARGET) $(DICTS).* *_cc.d *_cc.so *~
