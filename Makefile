@@ -24,9 +24,10 @@ PHOSRCS		= PhoAnalysis/CrapPhoAnalysis.cc $(CRAPSRCS) $(SUSYEVENT)
 PHOOBJ		= $(patsubst %.cpp,%.o,$(patsubst %.cc,%.o,$(PHOSRCS))) 
 PHOINC		= -I PhoAnalysis
 
-LLSRCS		= LLAnalysis/CrapLLAnalysis.cc $(CRAPSRCS) $(SUSYEVENT)
-LLOBJ		= $(patsubst %.cpp,%.o,$(patsubst %.cc,%.o,$(LLSRCS)))
-LLINC		= -I LLAnalysis
+# Since these are causing trouble will comment this out for now...
+#LLSRCS		= LLAnalysis/CrapLLAnalysis.cc $(CRAPSRCS) $(SUSYEVENT)
+#LLOBJ		= $(patsubst %.cpp,%.o,$(patsubst %.cc,%.o,$(LLSRCS)))
+#LLINC		= -I LLAnalysis
 
 MAINSRC		= CrapMain.cc
 
@@ -114,23 +115,32 @@ endif
 
 all:  CrapExe
 
-CrapExe: libPhoAnalysis.so libLLAnalysis.so CrapMain.o
+CrapExe: libPhoAnalysis.so CrapMain.o
 	@@echo "Making CrapExe"
-	@@$(CXX) $(CXXFLAGS) -o CrapExe $(GLOBALLIBS) -l CrapPhoAnalysis -l CrapLLAnalysis CrapMain.o
+	@@$(CXX) $(CXXFLAGS) -o CrapExe $(GLOBALLIBS) -l CrapPhoAnalysis CrapMain.o
+
+#CrapExe: libPhoAnalysis.so libLLAnalysis.so CrapMain.o
+#	@@echo "Making CrapExe"
+#	@@$(CXX) $(CXXFLAGS) -o CrapExe $(GLOBALLIBS) -l CrapPhoAnalysis -l CrapLLAnalysis CrapMain.o
   
-CrapLLAnalysis: libLLAnalysis.so
+#CrapLLAnalysis: libLLAnalysis.so
 
 CrapPhoAnalysis: libPhoAnalysis.so
 
 libPhoAnalysis.so: $(PHOOBJ) $(DICTS)
 	@@echo "Making libPhoAnalysis.so..."
 	@@$(CXX) $(CXXFLAGS) $(SOFLAGS) -o lib/libCrapPhoAnalysis.so $(GLOBALINC) $(PHOINC) $(GLOBALLIBS) $(PHOOBJ) $(DICTS).cc
+
+# Counting these guys out for now...
+#libLLAnalysis.so: $(LLOBJ) $(DICTS)
+#	@@echo "Making libLLAnalysis.so..."
+#	@@$(CXX) $(CXXFLAGS) $(SOFLAGS) -o lib/libCrapLLAnalysis.so $(GLOBALINC) $(LLINC) $(GLOBALLIBS) $(LLOBJ) $(DICTS).cc
 	
-libLLAnalysis.so: $(LLOBJ) $(DICTS)
-	@@echo "Making libLLAnalysis.so..."
-	@@$(CXX) $(CXXFLAGS) $(SOFLAGS) -o lib/libCrapLLAnalysis.so $(GLOBALINC) $(LLINC) $(GLOBALLIBS) $(LLOBJ) $(DICTS).cc
-	
-		
+  
+%.cc:   %.h
+
+%.cpp:  %.h
+
 %.o: %.cc
 	echo "Making $@..."
 	@@$(CXX) $(CXXFLAGS) $(GLOBALINC) -c $^ -o $@

@@ -2,10 +2,10 @@
 
 #include <TChain.h>
 #include <iostream>
-
 #include "Crap.h"
+#include "TROOT.h"
 #include "PhoAnalysis/CrapPhoAnalysis.h"
-#include "LLAnalysis/CrapLLAnalysis.h"
+//#include "LLAnalysis/CrapLLAnalysis.h"
 
 using namespace std;
 
@@ -192,20 +192,23 @@ int main(int argc, char* argv[]) {
     cerr << "Probably not going to do a whole lot here..." << endl;
   }
   
-
-  
-  //chain.Add("root://cmseos.fnal.gov//eos/uscms/store/user/lpcpjm/SusyNtuples/cms538v1/Run2012D-22Jan2013-v1/DoublePhoton/susyEvents_361_1_fC3.root");
-
-  //TString outputName="analysis";
   
   
   // At this point we have done all the general stuff -- now analysis specific bits...
   
-  
+   
   cout << "Proceeding to run selected analysis: \"" << Analysis << "\"" << endl;
   
   if (Analysis=="Pho") {
+    cout << "Instantiating analysis..." << endl;
     
+    cout << "Got: " << chain.GetEntries() << " Entries... " << endl;
+    // some debugging we'll probably remove later...
+    // cout << gROOT->ProcessLine("gDebug = 3");
+    //chain.LoadTree(0);
+    //chain.ls("all");
+    //chain.Print("all");
+
     CrapPhoAnalysis sea(chain);
 
     sea.SetOutput(OutputBase);
@@ -218,8 +221,8 @@ int main(int argc, char* argv[]) {
     sea.SetProcessNEvents(ProcessNEvents);
   
     sea.Run();
- 
-  } else if (Analysis == "LL") {
+ // Commenting out the LL stuff for now...  Multiple copies of this ain't quite working...
+  } /* else if (Analysis == "LL") {
  
     CrapLLAnalysis sea(chain);
     
@@ -236,5 +239,5 @@ int main(int argc, char* argv[]) {
     
   } else { // something else
     cout << "You picked a bogus analysis option: \"" << Analysis << "\"" << endl;
-  }
+  }  */
 }

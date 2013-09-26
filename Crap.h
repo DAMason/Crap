@@ -92,7 +92,7 @@ Crap::Crap(TTree& tree) :
   currentLumi(0, 0),
   currentLumiIsGood(true)
 {
-  event.setInput(tree);
+   event.setInput(tree);
 }
 
 Crap::~Crap()
